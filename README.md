@@ -994,6 +994,7 @@ JSON format exactly:
   "explanation": "Brief 1-2 sentence professional analysis of key indicators, support/resistance, trend, and reasoning for the grade."
 }`;
 
+      // Исправленный URL, который гарантированно принимает запросы с картинками
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
       const requestBody = {
@@ -1009,10 +1010,7 @@ JSON format exactly:
               }
             ]
           }
-        ],
-        generationConfig: {
-          responseMimeType: "application/json"
-        }
+        ]
       };
 
       try {
@@ -1027,9 +1025,14 @@ JSON format exactly:
         }
 
         const data = await response.json();
-        const jsonText = data.candidates[0].content.parts[0].text;
-        const result = JSON.parse(jsonText);
         
+        // Извлекаем текст ответа ИИ
+        let jsonText = data.candidates[0].content.parts[0].text;
+        
+        // Очищаем от возможных markdown-оберток ```json ... ```, если ИИ их добавил
+        jsonText = jsonText.replace(/```json/g, "").replace(/```/g, "").trim();
+        
+        const result = JSON.parse(jsonText);
         displayResults(result);
 
       } catch (error) {
