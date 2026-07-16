@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GRADEDESK — Free AI Setup Grading for Traders</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght=400;500;600;700&family=Inter:wght=400;500;600&family=JetBrains+Mono:wght=400;500;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg: #0B0F14;
@@ -25,7 +25,6 @@
   }
 
   *{margin:0; padding:0; box-sizing:border-box;}
-
   html{scroll-behavior:smooth;}
 
   body{
@@ -37,19 +36,9 @@
     overflow-x: hidden;
   }
 
-  @media (prefers-reduced-motion: reduce){
-    *{animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important;}
-  }
-
   a{color:inherit; text-decoration:none;}
   button{font-family:inherit; cursor:pointer;}
-
   ::selection{ background: var(--amber); color: #0B0F14; }
-
-  :focus-visible{
-    outline: 2px solid var(--amber);
-    outline-offset: 3px;
-  }
 
   .wrap{
     max-width: 1180px;
@@ -117,7 +106,6 @@
   }
   .nav-links a:hover{ color: var(--ink); }
   
-  /* Класс кнопки в меню */
   .nav-cta{
     background: var(--bull);
     color: #06120E;
@@ -226,15 +214,76 @@
     color: var(--ink-faint);
   }
 
-  /* ---------- Hero visual: chart + stamp ---------- */
+  /* API Key Config Box */
+  .api-config {
+    background: var(--bg-raised);
+    border: 1px solid var(--line);
+    padding: 14px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 13px;
+  }
+  .api-config input {
+    width: 100%;
+    background: var(--bg-inset);
+    border: 1px solid var(--line);
+    padding: 8px 12px;
+    color: #fff;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    margin-top: 8px;
+  }
+
+  /* ---------- Интерактивная зона загрузки ---------- */
   .hero-visual{
     position:relative;
     background: var(--bg-raised);
-    border: 1px solid var(--line);
+    border: 2px dashed var(--line);
     border-radius: 10px;
-    padding: 22px 22px 18px;
-    transition: border-color 0.3s ease;
+    padding: 22px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    min-height: 340px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
   }
+  .hero-visual.dragover {
+    border-color: var(--bull);
+    background: rgba(0,217,163,0.03);
+  }
+  
+  /* Внутренние состояния загрузчика */
+  .upload-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    flex-grow: 1;
+    padding: 40px 10px;
+  }
+  .upload-placeholder svg {
+    margin-bottom: 16px;
+    color: var(--ink-dim);
+  }
+  .upload-placeholder h3 {
+    font-family: var(--font-display);
+    font-size: 18px;
+    margin-bottom: 8px;
+  }
+  .upload-placeholder p {
+    font-size: 13px;
+    color: var(--ink-dim);
+  }
+
+  .preview-container {
+    display: none;
+    width: 100%;
+    flex-direction: column;
+    height: 100%;
+  }
+  
   .visual-head{
     display:flex;
     justify-content:space-between;
@@ -248,8 +297,44 @@
   .dot-row{ display:flex; gap:6px; }
   .dot-row span{ width:7px; height:7px; border-radius:50%; background: var(--line); display:inline-block; }
 
-  .chart-svg{ width: 100%; height: auto; display:block; }
+  .chart-preview-wrapper {
+    width: 100%;
+    height: 180px;
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--bg-inset);
+    position: relative;
+    border: 1px solid var(--line);
+  }
+  .chart-preview-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
 
+  /* Лоадер */
+  .loading-overlay {
+    display: none;
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(11, 15, 20, 0.85);
+    border-radius: 10px;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    z-index: 10;
+  }
+  .spinner {
+    width: 40px; height: 40px;
+    border: 3px solid var(--line);
+    border-top-color: var(--bull);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Штамп оценки ИИ */
   .stamp{
     position:absolute;
     top: 34px;
@@ -265,7 +350,15 @@
     letter-spacing: 0.02em;
     background: rgba(0,217,163,0.06);
     box-shadow: 0 0 0 3px rgba(0,217,163,0.05);
+    display: none;
   }
+  .stamp.visible { display: block; }
+  .stamp.color-A { border-color: var(--bull); color: var(--bull); }
+  .stamp.color-B { border-color: var(--amber); color: var(--amber); }
+  .stamp.color-C { border-color: var(--amber); color: var(--amber); }
+  .stamp.color-D { border-color: var(--bear); color: var(--bear); }
+  .stamp.color-F { border-color: var(--bear); color: var(--bear); }
+
   .stamp small{
     display:block;
     font-family: var(--font-mono);
@@ -294,6 +387,19 @@
   .vstat .v{ font-family: var(--font-mono); font-size: 14px; font-weight: 700; }
   .vstat .v.bull{ color: var(--bull); }
   .vstat .v.bear{ color: var(--bear); }
+
+  /* Текстовое саммари от ИИ */
+  .analysis-note {
+    margin-top: 14px;
+    background: var(--bg-inset);
+    border: 1px solid var(--line);
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 12.5px;
+    color: var(--ink-dim);
+    line-height: 1.5;
+    display: none;
+  }
 
   /* ---------- Section shared ---------- */
   section{ padding: 76px 0; border-top: 1px solid var(--line); }
@@ -509,7 +615,6 @@
         <a href="#samples">Sample grades</a>
         <a href="#faq">FAQ</a>
       </div>
-      <!-- Кнопка в меню с ID "navCtaBtn" -->
       <button class="nav-cta" id="navCtaBtn">Analyze chart free</button>
     </nav>
 
@@ -518,8 +623,15 @@
         <div class="eyebrow">Now grading forex, crypto &amp; futures</div>
         <h1>Know if the setup is <em>real</em><br>before you click buy.</h1>
         <p class="hero-sub">Upload a screenshot of any chart. GradeDesk reads the structure, checks it against your trading profile, and hands back a letter grade with the entry, stop, and targets — in under ten seconds.</p>
+        
+        <!-- Настройки API-ключа -->
+        <div class="api-config">
+          <label for="apiKeyInput">⚙️ Enter your Gemini API Key (saved only in your browser):</label>
+          <input type="password" id="apiKeyInput" placeholder="AIzaSy...">
+          <p style="font-size:10.5px; color:var(--ink-faint); margin-top:5px;">Get a free key from Google AI Studio</p>
+        </div>
+
         <div class="hero-actions">
-          <!-- Кнопка в шапке с ID "analyzeBtn" -->
           <button class="btn-primary" id="analyzeBtn">
             Grade my next chart
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
@@ -529,40 +641,51 @@
         <div class="hero-meta">NO REGISTRATION · UNLIMITED USE · RESULTS IN ~8S</div>
       </div>
 
+      <!-- Интерактивная зона для загрузки файлов -->
       <div class="hero-visual" id="heroVisual">
-        <div class="visual-head">
-          <span class="sym">NVDA · 5M</span>
-          <div class="dot-row"><span></span><span></span><span></span></div>
+        <!-- Поля скрытой загрузки -->
+        <input type="file" id="fileInput" accept="image/*" style="display: none;">
+        
+        <!-- Лоадер -->
+        <div class="loading-overlay" id="loadingOverlay">
+          <div class="spinner"></div>
+          <span style="font-family: var(--font-mono); font-size:13px; color: var(--bull);">AI is analyzing chart...</span>
         </div>
-        <svg class="chart-svg" viewBox="0 0 460 190" id="chartSvg">
-          <defs>
-            <linearGradient id="fillGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#00D9A3" stop-opacity="0.22"/>
-              <stop offset="100%" stop-color="#00D9A3" stop-opacity="0"/>
-            </linearGradient>
-          </defs>
-          <g stroke="#161D25" stroke-width="1">
-            <line x1="0" y1="30" x2="460" y2="30"/>
-            <line x1="0" y1="70" x2="460" y2="70"/>
-            <line x1="0" y1="110" x2="460" y2="110"/>
-            <line x1="0" y1="150" x2="460" y2="150"/>
-          </g>
-          <polyline points="0,140 20,148 40,130 60,138 80,120 100,126 120,100 140,108 160,90 180,96 200,72 220,80 240,60 260,68 280,48 300,54 320,36 340,42 360,26 380,32 400,18 420,24 440,14 460,10"
-            fill="none" stroke="#00D9A3" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
-          <polygon points="0,140 20,148 40,130 60,138 80,120 100,126 120,100 140,108 160,90 180,96 200,72 220,80 240,60 260,68 280,48 300,54 320,36 340,42 360,26 380,32 400,18 420,24 440,14 460,10 460,190 0,190"
-            fill="url(#fillGrad)"/>
-          <line x1="0" y1="96" x2="460" y2="96" stroke="#5B6672" stroke-width="1" stroke-dasharray="4 4"/>
-          <line x1="0" y1="158" x2="460" y2="158" stroke="#FF5C5C" stroke-width="1" stroke-dasharray="4 4"/>
-        </svg>
-        <div class="stamp">A+<small>SETUP</small></div>
-        <div class="visual-stats">
-          <div class="vstat"><div class="l">Entry</div><div class="v">881.40</div></div>
-          <div class="vstat"><div class="l">Stop</div><div class="v bear">874.10</div></div>
-          <div class="vstat"><div class="l">Target 2</div><div class="v bull">896.80</div></div>
-          <div class="vstat"><div class="l">R:R</div><div class="v">1 : 2.1</div></div>
+
+        <!-- 1. Заглушка (когда файл НЕ выбран) -->
+        <div class="upload-placeholder" id="uploadPlaceholder">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <h3>Drop your chart screenshot here</h3>
+          <p>or click to browse from device</p>
+        </div>
+
+        <!-- 2. Превью и Статистика (когда файл выбран) -->
+        <div class="preview-container" id="previewContainer">
+          <div class="visual-head">
+            <span class="sym" id="outputAsset">UPLOADED CHART</span>
+            <div class="dot-row"><span></span><span></span><span></span></div>
+          </div>
+          
+          <div class="chart-preview-wrapper">
+            <img src="" id="chartImgPreview" class="chart-preview-img" alt="Uploaded Chart">
+          </div>
+          
+          <!-- Штамп с оценкой от ИИ -->
+          <div class="stamp" id="gradeStamp">A+<small>SETUP</small></div>
+          
+          <!-- Характеристики сделки от ИИ -->
+          <div class="visual-stats">
+            <div class="vstat"><div class="l">Entry</div><div class="v" id="outEntry">—</div></div>
+            <div class="vstat"><div class="l">Stop</div><div class="v bear" id="outStop">—</div></div>
+            <div class="vstat"><div class="l">Target</div><div class="v bull" id="outTarget">—</div></div>
+            <div class="vstat"><div class="l">R:R</div><div class="v" id="outRR">—</div></div>
+          </div>
         </div>
       </div>
     </section>
+
+    <!-- Блок текстового объяснения от ИИ под графиком -->
+    <div class="analysis-note" id="analysisExplanation"></div>
   </div>
 
   <section id="how">
@@ -572,7 +695,7 @@
           <div class="section-label">Process</div>
           <h2>Three steps, no chart theory required.</h2>
         </div>
-        <p class="section-sub">You bring the screenshot. GradeDesk brings the pattern recognition and the discipline you skip at 9:32am.</p>
+        <p class="section-sub">You bring the screenshot. GradeDesk brings the pattern recognition and the discipline you skip.</p>
       </div>
       <div class="flow">
         <div class="flow-step">
@@ -681,7 +804,6 @@
     <div class="wrap">
       <h2>Absolutely free. No card, no catch.</h2>
       <p class="section-sub">Grade unlimited charts whenever you need them.</p>
-      <!-- Кнопка внизу с ID "analyzeBtn2" -->
       <button class="btn-primary" id="analyzeBtn2">Grade my next chart</button>
     </div>
   </section>
@@ -734,41 +856,215 @@
   }
   buildTicker();
 
-  // Функция для анимации штампа и рамки графика
-  function pulseStamp(){
-    const stamp = document.querySelector('.stamp');
-    const visual = document.getElementById('heroVisual');
-    if(!stamp || !visual) return;
-    
-    visual.style.borderColor = 'var(--bull)';
-    stamp.style.transition = 'transform 0.35s ease';
-    stamp.style.transform = 'rotate(-9deg) scale(1.25)';
-    
-    setTimeout(()=>{ 
-      stamp.style.transform = 'rotate(-9deg) scale(1)'; 
-      visual.style.borderColor = 'var(--line)';
-    }, 350);
-  }
-  
-  // Плавный скролл к графику
-  const scrollAndPulse = (e) => {
-    if (e) e.preventDefault(); // Предотвращаем перезагрузку страницы или скачок
+  // Плавный скролл к форме загрузки
+  const scrollToUpload = (e) => {
+    if (e) e.preventDefault();
     const target = document.getElementById('heroVisual');
     if (target) {
       target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      setTimeout(pulseStamp, 400);
     }
   };
 
-  // Навешиваем слушатели событий на кнопки
+  // --- ЛОГИКА ЗАГРУЗКИ ФАЙЛОВ И ИНТЕГРАЦИЯ С ИИ ---
+  
   document.addEventListener('DOMContentLoaded', () => {
+    // Навигационные кнопки
     const btn1 = document.getElementById('analyzeBtn');
     const btn2 = document.getElementById('analyzeBtn2');
     const navBtn = document.getElementById('navCtaBtn');
 
-    if (btn1) btn1.addEventListener('click', scrollAndPulse);
-    if (btn2) btn2.addEventListener('click', scrollAndPulse);
-    if (navBtn) navBtn.addEventListener('click', scrollAndPulse);
+    if (btn1) btn1.addEventListener('click', scrollToUpload);
+    if (btn2) btn2.addEventListener('click', scrollToUpload);
+    if (navBtn) navBtn.addEventListener('click', scrollToUpload);
+
+    // Работа с загрузкой файлов
+    const heroVisual = document.getElementById('heroVisual');
+    const fileInput = document.getElementById('fileInput');
+    const uploadPlaceholder = document.getElementById('uploadPlaceholder');
+    const previewContainer = document.getElementById('previewContainer');
+    const chartImgPreview = document.getElementById('chartImgPreview');
+    const apiKeyInput = document.getElementById('apiKeyInput');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    
+    // Элементы вывода ИИ
+    const outputAsset = document.getElementById('outputAsset');
+    const gradeStamp = document.getElementById('gradeStamp');
+    const outEntry = document.getElementById('outEntry');
+    const outStop = document.getElementById('outStop');
+    const outTarget = document.getElementById('outTarget');
+    const outRR = document.getElementById('outRR');
+    const analysisExplanation = document.getElementById('analysisExplanation');
+
+    // Восстанавливаем API-ключ из памяти браузера, если он вводился ранее
+    if (localStorage.getItem('gemini_api_key')) {
+      apiKeyInput.value = localStorage.getItem('gemini_api_key');
+    }
+
+    // Сохраняем ключ при вводе
+    apiKeyInput.addEventListener('input', () => {
+      localStorage.setItem('gemini_api_key', apiKeyInput.value.trim());
+    });
+
+    // Открытие окна выбора файла по клику на область
+    heroVisual.addEventListener('click', (e) => {
+      // Исключаем клик по вводу файла, чтобы не вызвать рекурсию
+      if (e.target !== fileInput) {
+        fileInput.click();
+      }
+    });
+
+    // Drag and Drop события
+    ['dragenter', 'dragover'].forEach(eventName => {
+      heroVisual.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        heroVisual.classList.add('dragover');
+      }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      heroVisual.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        heroVisual.classList.remove('dragover');
+      }, false);
+    });
+
+    // При дропе файла в область
+    heroVisual.addEventListener('drop', (e) => {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      if (files.length > 0) {
+        handleFile(files[0]);
+      }
+    });
+
+    // При выборе файла через стандартный проводник
+    fileInput.addEventListener('change', (e) => {
+      if (fileInput.files.length > 0) {
+        handleFile(fileInput.files[0]);
+      }
+    });
+
+    // Обработка выбранного файла
+    function handleFile(file) {
+      if (!file.type.startsWith('image/')) {
+        alert('Please, upload an image file (PNG/JPG).');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onloadend = () => {
+        // Показываем превью картинки
+        chartImgPreview.src = reader.result;
+        uploadPlaceholder.style.display = 'none';
+        previewContainer.style.display = 'flex';
+        
+        // Скрываем прошлые результаты
+        gradeStamp.classList.remove('visible');
+        analysisExplanation.style.display = 'none';
+
+        // Проверяем наличие ключа и запускаем анализ
+        const apiKey = apiKeyInput.value.trim();
+        if (!apiKey) {
+          alert('Please enter your Google Gemini API Key first!');
+          return;
+        }
+
+        analyzeWithAI(reader.result.split(',')[1], file.type, apiKey);
+      };
+    }
+
+    // Функция отправки запроса в Gemini API
+    async function analyzeWithAI(base64Image, mimeType, apiKey) {
+      loadingOverlay.style.display = 'flex';
+
+      // Системный промпт для разбора графика в строгом формате JSON
+      const systemPrompt = `You are an elite, risk-managed prop trading analyst. Analyze the provided chart screenshot and grade the setup. 
+Return ONLY a valid raw JSON object. Do not wrap it in markdown blocks or write any text before/after.
+JSON format exactly:
+{
+  "asset": "Name of currency pair/stock/crypto and timeframe (e.g. BTCUSD, 15M)",
+  "grade": "Letter grade (A+, A, B, C, D, or F)",
+  "entry": "Approximate level for entry",
+  "stop": "Recommended stop-loss price",
+  "target": "Take-profit price target",
+  "rr": "Risk-to-reward ratio (e.g., 1:2.5)",
+  "explanation": "Brief 1-2 sentence professional analysis of key indicators, support/resistance, trend, and reasoning for the grade."
+}`;
+
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+
+      const requestBody = {
+        contents: [
+          {
+            parts: [
+              { text: systemPrompt },
+              {
+                inlineData: {
+                  mimeType: mimeType,
+                  data: base64Image
+                }
+              }
+            ]
+          }
+        ],
+        generationConfig: {
+          responseMimeType: "application/json"
+        }
+      };
+
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+          throw new Error(`API returned error: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        const jsonText = data.candidates[0].content.parts[0].text;
+        const result = JSON.parse(jsonText);
+        
+        displayResults(result);
+
+      } catch (error) {
+        console.error(error);
+        alert(`Analysis failed: ${error.message}. Please double-check your API key or image quality.`);
+      } finally {
+        loadingOverlay.style.display = 'none';
+      }
+    }
+
+    // Отображение полученных результатов
+    function displayResults(data) {
+      // 1. Указываем актив
+      outputAsset.textContent = data.asset || "GRADED SETUP";
+      
+      // 2. Оформляем штамп
+      const cleanGrade = (data.grade || "C").toUpperCase();
+      gradeStamp.innerHTML = `${cleanGrade}<small>SETUP</small>`;
+      
+      // Сбрасываем цвета штампа
+      gradeStamp.className = "stamp visible";
+      // Извлекаем первую букву для подбора цвета (например, A+ -> A)
+      const baseGradeLetter = cleanGrade.charAt(0);
+      gradeStamp.classList.add(`color-${baseGradeLetter}`);
+
+      // 3. Заполняем характеристики
+      outEntry.textContent = data.entry || "—";
+      outStop.textContent = data.stop || "—";
+      outTarget.textContent = data.target || "—";
+      outRR.textContent = data.rr || "—";
+
+      // 4. Текстовое саммари
+      analysisExplanation.style.display = "block";
+      analysisExplanation.innerHTML = `<strong>🔮 AI Analysis:</strong> ${data.explanation || "No explanation provided."}`;
+    }
   });
 </script>
 
