@@ -126,7 +126,7 @@
   .hero{
     padding: 88px 0 70px;
     display:grid;
-    grid-template-columns: 1.05fr 0.95fr;
+    grid-template-columns: 0.85fr 1.15fr;
     gap: 40px;
     align-items:center;
     position:relative;
@@ -240,10 +240,10 @@
     background: var(--bg-raised);
     border: 2px dashed var(--line);
     border-radius: 10px;
-    padding: 22px;
+    padding: 28px;
     transition: all 0.3s ease;
     cursor: pointer;
-    min-height: 340px;
+    min-height: 540px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -299,7 +299,7 @@
 
   .chart-preview-wrapper {
     width: 100%;
-    height: 180px;
+    height: 280px;
     border-radius: 6px;
     overflow: hidden;
     background: var(--bg-inset);
@@ -371,7 +371,7 @@
 
   .visual-stats{
     display:grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 1px;
     background: var(--line);
     border: 1px solid var(--line);
@@ -381,10 +381,10 @@
   }
   .vstat{
     background: var(--bg-inset);
-    padding: 11px 12px;
+    padding: 13px 12px;
   }
-  .vstat .l{ font-family: var(--font-mono); font-size: 9.5px; color: var(--ink-faint); text-transform:uppercase; letter-spacing: 0.06em; margin-bottom: 5px;}
-  .vstat .v{ font-family: var(--font-mono); font-size: 14px; font-weight: 700; }
+  .vstat .l{ font-family: var(--font-mono); font-size: 10px; color: var(--ink-faint); text-transform:uppercase; letter-spacing: 0.06em; margin-bottom: 5px;}
+  .vstat .v{ font-family: var(--font-mono); font-size: 15px; font-weight: 700; }
   .vstat .v.bull{ color: var(--bull); }
   .vstat .v.bear{ color: var(--bear); }
 
@@ -676,9 +676,11 @@
           <!-- Характеристики сделки от ИИ -->
           <div class="visual-stats">
             <div class="vstat"><div class="l">Entry</div><div class="v" id="outEntry">—</div></div>
-            <div class="vstat"><div class="l">Stop</div><div class="v bear" id="outStop">—</div></div>
-            <div class="vstat"><div class="l">Target</div><div class="v bull" id="outTarget">—</div></div>
+            <div class="vstat"><div class="l">Stop Loss</div><div class="v bear" id="outStop">—</div></div>
             <div class="vstat"><div class="l">R:R</div><div class="v" id="outRR">—</div></div>
+            <div class="vstat"><div class="l">Take Profit 1</div><div class="v bull" id="outTP1">—</div></div>
+            <div class="vstat"><div class="l">Take Profit 2</div><div class="v bull" id="outTP2">—</div></div>
+            <div class="vstat"><div class="l">Take Profit 3</div><div class="v bull" id="outTP3">—</div></div>
           </div>
         </div>
       </div>
@@ -734,7 +736,7 @@
           </div>
           <div class="gcard-row"><span class="l">Entry</span><span class="v">203.40</span></div>
           <div class="gcard-row"><span class="l">Stop</span><span class="v">198.90</span></div>
-          <div class="gcard-row"><span class="l">Target 1 / 2</span><span class="v">211.0 / 219.5</span></div>
+          <div class="gcard-row"><span class="l">Target 1 / 2 / 3</span><span class="v">211.0 / 219.5 / 228.0</span></div>
           <div class="gcard-row"><span class="l">Risk : Reward</span><span class="v">1 : 2.4</span></div>
           <div class="gcard-note">Clean break above the 20EMA with rising volume. VWAP reclaim confirms — the kind of structure worth sizing up.</div>
         </div>
@@ -745,7 +747,7 @@
           </div>
           <div class="gcard-row"><span class="l">Entry</span><span class="v">1.0862</span></div>
           <div class="gcard-row"><span class="l">Stop</span><span class="v">1.0841</span></div>
-          <div class="gcard-row"><span class="l">Target 1 / 2</span><span class="v">1.0890 / 1.0912</span></div>
+          <div class="gcard-row"><span class="l">Target 1 / 2 / 3</span><span class="v">1.0890 / 1.0912 / 1.0935</span></div>
           <div class="gcard-row"><span class="l">Risk : Reward</span><span class="v">1 : 1.3</span></div>
           <div class="gcard-note">Setup works but reward is thin against the stop distance. Fine as a scalp, weak as a swing.</div>
         </div>
@@ -756,7 +758,7 @@
           </div>
           <div class="gcard-row"><span class="l">Entry</span><span class="v">146.20</span></div>
           <div class="gcard-row"><span class="l">Stop</span><span class="v">143.10</span></div>
-          <div class="gcard-row"><span class="l">Target 1 / 2</span><span class="v">148.0 / —</span></div>
+          <div class="gcard-row"><span class="l">Target 1 / 2 / 3</span><span class="v">148.0 / — / —</span></div>
           <div class="gcard-row"><span class="l">Risk : Reward</span><span class="v">1 : 0.6</span></div>
           <div class="gcard-note">Already extended 4% off the base with no pullback. Stop is wide, target is close. Let it come back.</div>
         </div>
@@ -891,8 +893,10 @@
     const gradeStamp = document.getElementById('gradeStamp');
     const outEntry = document.getElementById('outEntry');
     const outStop = document.getElementById('outStop');
-    const outTarget = document.getElementById('outTarget');
     const outRR = document.getElementById('outRR');
+    const outTP1 = document.getElementById('outTP1');
+    const outTP2 = document.getElementById('outTP2');
+    const outTP3 = document.getElementById('outTP3');
     const analysisExplanation = document.getElementById('analysisExplanation');
 
     // Восстанавливаем API-ключ из памяти браузера, если он вводился ранее
@@ -976,7 +980,11 @@
       };
     }
 
-    // Функция отправки запроса в Gemini API
+    // Цепочка моделей: пробуем по порядку. Если модель перегружена (503) или
+    // упёрлись в лимит (429) — переходим к следующей вместо того, чтобы просто упасть.
+    const MODEL_FALLBACK_CHAIN = ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-flash-lite-latest'];
+
+    // Функция отправки запроса в Gemini API с ретраями и fallback на другую модель
     async function analyzeWithAI(base64Image, mimeType, apiKey) {
       loadingOverlay.style.display = 'flex';
 
@@ -989,13 +997,12 @@ JSON format exactly:
   "grade": "Letter grade (A+, A, B, C, D, or F)",
   "entry": "Approximate level for entry",
   "stop": "Recommended stop-loss price",
-  "target": "Take-profit price target",
-  "rr": "Risk-to-reward ratio (e.g., 1:2.5)",
+  "target1": "First take-profit price - closest, conservative target",
+  "target2": "Second take-profit price - medium target",
+  "target3": "Third take-profit price - extended/stretch target",
+  "rr": "Risk-to-reward ratio for target1 (e.g., 1:2.5)",
   "explanation": "Brief 1-2 sentence professional analysis of key indicators, support/resistance, trend, and reasoning for the grade."
 }`;
-
-      // Исправленный URL, который гарантированно принимает запросы с картинками
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
 
       const requestBody = {
         contents: [
@@ -1013,34 +1020,55 @@ JSON format exactly:
         ]
       };
 
-      try {
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(requestBody)
-        });
+      let lastErrorMessage = 'Unknown error';
 
-        if (!response.ok) {
-          throw new Error(`API returned error: ${response.status} ${response.statusText}`);
+      for (const model of MODEL_FALLBACK_CHAIN) {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+        // На каждую модель — до 2 попыток с небольшой паузой (актуально для 503/429)
+        for (let attempt = 1; attempt <= 2; attempt++) {
+          try {
+            const response = await fetch(url, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(requestBody)
+            });
+
+            if (response.status === 503 || response.status === 429) {
+              lastErrorMessage = `${model}: сервер перегружен (${response.status})`;
+              await new Promise(r => setTimeout(r, 1200 * attempt));
+              continue; // ещё одна попытка той же модели
+            }
+
+            if (!response.ok) {
+              lastErrorMessage = `${model}: ошибка ${response.status} ${response.statusText}`;
+              break; // не 503/429 — сразу пробуем следующую модель, а не повторяем эту же
+            }
+
+            const data = await response.json();
+
+            // Извлекаем текст ответа ИИ
+            let jsonText = data.candidates[0].content.parts[0].text;
+
+            // Очищаем от возможных markdown-оберток ```json ... ```, если ИИ их добавил
+            jsonText = jsonText.replace(/```json/g, "").replace(/```/g, "").trim();
+
+            const result = JSON.parse(jsonText);
+            displayResults(result);
+            loadingOverlay.style.display = 'none';
+            return; // успех — выходим из функции полностью
+
+          } catch (error) {
+            lastErrorMessage = `${model}: ${error.message}`;
+          }
         }
-
-        const data = await response.json();
-        
-        // Извлекаем текст ответа ИИ
-        let jsonText = data.candidates[0].content.parts[0].text;
-        
-        // Очищаем от возможных markdown-оберток ```json ... ```, если ИИ их добавил
-        jsonText = jsonText.replace(/```json/g, "").replace(/```/g, "").trim();
-        
-        const result = JSON.parse(jsonText);
-        displayResults(result);
-
-      } catch (error) {
-        console.error(error);
-        alert(`Analysis failed: ${error.message}. Please double-check your API key or image quality.`);
-      } finally {
-        loadingOverlay.style.display = 'none';
+        // все попытки для этой модели исчерпаны — переходим к следующей модели в цепочке
       }
+
+      // Все модели и попытки исчерпаны
+      console.error(lastErrorMessage);
+      alert(`Модели Gemini сейчас перегружены или недоступны. Попробуйте ещё раз через минуту.\n\nДетали: ${lastErrorMessage}`);
+      loadingOverlay.style.display = 'none';
     }
 
     // Отображение полученных результатов
@@ -1061,8 +1089,10 @@ JSON format exactly:
       // 3. Заполняем характеристики
       outEntry.textContent = data.entry || "—";
       outStop.textContent = data.stop || "—";
-      outTarget.textContent = data.target || "—";
       outRR.textContent = data.rr || "—";
+      outTP1.textContent = data.target1 || "—";
+      outTP2.textContent = data.target2 || "—";
+      outTP3.textContent = data.target3 || "—";
 
       // 4. Текстовое саммари
       analysisExplanation.style.display = "block";
