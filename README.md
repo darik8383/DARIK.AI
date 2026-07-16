@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GRADEDESK — AI Setup Grading for Traders</title>
+<title>GRADEDESK — Free AI Setup Grading for Traders</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
@@ -69,7 +69,7 @@
   }
   .ticker-track{
     display:inline-flex;
-    animation: scroll-left 38s linear infinite;
+    animation: scroll-left 45s linear infinite;
   }
   .ticker-item{
     font-family: var(--font-mono);
@@ -83,8 +83,8 @@
   .up{ color: var(--bull); }
   .down{ color: var(--bear); }
   @keyframes scroll-left{
-    from{ transform: translateX(0); }
-    to{ transform: translateX(-50%); }
+    0% { transform: translate3d(0, 0, 0); }
+    100% { transform: translate3d(-50%, 0, 0); }
   }
 
   /* ---------- Nav ---------- */
@@ -230,6 +230,7 @@
     border: 1px solid var(--line);
     border-radius: 10px;
     padding: 22px 22px 18px;
+    transition: border-color 0.3s ease;
   }
   .visual-head{
     display:flex;
@@ -421,82 +422,6 @@
     border-top: 1px solid var(--line-soft);
   }
 
-  /* ---------- Pricing ---------- */
-  .pricing-grid{
-    display:grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-  }
-  @media (max-width: 900px){ .pricing-grid{ grid-template-columns: 1fr; } }
-
-  .pcard{
-    background: var(--bg-raised);
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    padding: 28px 24px;
-    position: relative;
-    display:flex;
-    flex-direction:column;
-  }
-  .pcard.feat{
-    border-color: var(--bull);
-    box-shadow: 0 0 0 1px var(--bull);
-  }
-  .pcard-stamp{
-    position:absolute;
-    top: -13px;
-    right: 20px;
-    background: var(--bull);
-    color: #06120E;
-    font-family: var(--font-mono);
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    padding: 4px 10px;
-    border-radius: 4px;
-    transform: rotate(-3deg);
-  }
-  .ptier{
-    font-family: var(--font-mono);
-    font-size: 11px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--ink-faint);
-    margin-bottom: 14px;
-  }
-  .pprice{
-    font-family: var(--font-display);
-    font-size: 38px;
-    font-weight: 700;
-    margin-bottom: 4px;
-  }
-  .pprice span{ font-size: 14px; color: var(--ink-faint); font-family: var(--font-body); font-weight: 500; }
-  .pcaption{ font-size: 12.5px; color: var(--ink-dim); margin-bottom: 24px; }
-  .plist{ list-style:none; margin-bottom: 26px; flex:1; }
-  .plist li{
-    font-size: 13.5px;
-    color: var(--ink-dim);
-    padding: 8px 0;
-    border-top: 1px solid var(--line-soft);
-    display:flex;
-    gap: 10px;
-  }
-  .plist li:first-child{ border-top:none; }
-  .plist li::before{ content:'—'; color: var(--ink-faint); }
-  .pbtn{
-    text-align:center;
-    padding: 11px;
-    border-radius: 6px;
-    font-weight: 600;
-    font-size: 13.5px;
-    border: 1px solid var(--line);
-    color: var(--ink);
-    transition: background 0.15s, border-color 0.15s;
-  }
-  .pbtn:hover{ border-color: var(--ink-dim); }
-  .pcard.feat .pbtn{ background: var(--bull); color: #06120E; border:none; }
-  .pcard.feat .pbtn:hover{ filter: brightness(1.08); }
-
   /* ---------- Stats strip ---------- */
   .stats-strip{
     display:grid;
@@ -579,10 +504,9 @@
       <div class="nav-links nav-mobile-hide">
         <a href="#how">How it works</a>
         <a href="#samples">Sample grades</a>
-        <a href="#pricing">Pricing</a>
         <a href="#faq">FAQ</a>
       </div>
-      <a href="#pricing" class="nav-cta">Get graded free</a>
+      <button class="nav-cta" id="navCtaBtn" style="border:none;">Analyze chart free</button>
     </nav>
 
     <section class="hero" style="border-top:none; padding-top:88px;">
@@ -597,10 +521,10 @@
           </button>
           <a href="#samples" class="btn-ghost">See a real grade →</a>
         </div>
-        <div class="hero-meta">NO CARD REQUIRED · 2 FREE GRADES · RESULTS IN ~8S</div>
+        <div class="hero-meta">NO REGISTRATION · UNLIMITED USE · RESULTS IN ~8S</div>
       </div>
 
-      <div class="hero-visual">
+      <div class="hero-visual" id="heroVisual">
         <div class="visual-head">
           <span class="sym">NVDA · 5M</span>
           <div class="dot-row"><span></span><span></span><span></span></div>
@@ -723,59 +647,6 @@
     </div>
   </section>
 
-  <section id="pricing">
-    <div class="wrap">
-      <div class="section-head">
-        <div>
-          <div class="section-label">Pricing</div>
-          <h2>Pay for grades, not a platform.</h2>
-        </div>
-        <p class="section-sub">Cancel from your dashboard anytime. Unused weekly grades don't roll over.</p>
-      </div>
-      <div class="pricing-grid">
-        <div class="pcard">
-          <div class="ptier">Weekly</div>
-          <div class="pprice">$4.99<span>/week</span></div>
-          <div class="pcaption">For traders testing the habit.</div>
-          <ul class="plist">
-            <li>15 graded charts per week</li>
-            <li>Full entry/stop/target breakdown</li>
-            <li>Personal trading profile</li>
-            <li>Stocks, forex &amp; crypto</li>
-          </ul>
-          <a class="pbtn" href="#">Start weekly</a>
-        </div>
-        <div class="pcard feat">
-          <div class="pcard-stamp">MOST GRADED</div>
-          <div class="ptier">Monthly</div>
-          <div class="pprice">$19.99<span>/month</span></div>
-          <div class="pcaption">For traders who chart every session.</div>
-          <ul class="plist">
-            <li>100 graded charts per month</li>
-            <li>Full entry/stop/target breakdown</li>
-            <li>Personal trading profile</li>
-            <li>Stocks, forex, crypto &amp; futures</li>
-            <li>Grade history &amp; accuracy tracking</li>
-          </ul>
-          <a class="pbtn" href="#">Start monthly</a>
-        </div>
-        <div class="pcard">
-          <div class="ptier">Yearly</div>
-          <div class="pprice">$199.99<span>/year</span></div>
-          <div class="pcaption">For traders who don't want to count.</div>
-          <ul class="plist">
-            <li>Unlimited graded charts</li>
-            <li>Full entry/stop/target breakdown</li>
-            <li>Personal trading profile</li>
-            <li>All asset classes, incl. metals</li>
-            <li>Priority grading queue</li>
-          </ul>
-          <a class="pbtn" href="#">Start yearly</a>
-        </div>
-      </div>
-    </div>
-  </section>
-
   <section id="faq">
     <div class="wrap">
       <div class="section-head">
@@ -786,7 +657,6 @@
       </div>
       <div class="flow">
         <div class="flow-step">
-          <flow-tag></flow-tag>
           <h3>Is this financial advice?</h3>
           <p>No. GradeDesk grades chart structure against your own rules — it doesn't know your account size or your life. Every grade is a starting point, not an order.</p>
         </div>
@@ -804,8 +674,8 @@
 
   <section class="cta-block" style="border-top: 1px solid var(--line);">
     <div class="wrap">
-      <h2>Two free grades. No card, no pitch.</h2>
-      <p class="section-sub">See what your last chart was actually worth.</p>
+      <h2>Absolutely free. No card, no catch.</h2>
+      <p class="section-sub">Grade unlimited charts whenever you need them.</p>
       <button class="btn-primary" id="analyzeBtn2">Grade my next chart</button>
     </div>
   </section>
@@ -822,12 +692,11 @@
         <div class="foot-links">
           <a href="#how">How it works</a>
           <a href="#samples">Sample grades</a>
-          <a href="#pricing">Pricing</a>
           <a href="#faq">FAQ</a>
         </div>
       </div>
       <div class="foot-bottom">
-        <div class="foot-legal">GradeDesk is a chart-analysis tool, not a licensed financial advisor. Grades reflect technical structure only and are not investment advice. Trading involves risk of loss.</div>
+        <div class="foot-legal">GradeDesk is a free chart-analysis tool, not a licensed financial advisor. Grades reflect technical structure only and are not investment advice. Trading involves risk of loss.</div>
         <div>© 2026 GRADEDESK</div>
       </div>
     </div>
@@ -850,7 +719,7 @@
   const track = document.getElementById('tickerTrack');
   function buildTicker(){
     let html = '';
-    for(let rep=0; rep<2; rep++){
+    for(let rep=0; rep<4; rep++){
       tickerData.forEach(([sym, price, chg, up])=>{
         html += `<span class="ticker-item"><b>${sym}</b>${price} <span class="${up?'up':'down'}">${chg}</span></span>`;
       });
@@ -859,22 +728,31 @@
   }
   buildTicker();
 
-  // Fake analyze interaction
+  // Interaction behavior
   function pulseStamp(){
     const stamp = document.querySelector('.stamp');
-    if(!stamp) return;
+    const visual = document.getElementById('heroVisual');
+    if(!stamp || !visual) return;
+    
+    visual.style.borderColor = 'var(--bull)';
     stamp.style.transition = 'transform 0.35s ease';
-    stamp.style.transform = 'rotate(-9deg) scale(1.15)';
-    setTimeout(()=>{ stamp.style.transform = 'rotate(-9deg) scale(1)'; }, 350);
+    stamp.style.transform = 'rotate(-9deg) scale(1.25)';
+    
+    setTimeout(()=>{ 
+      stamp.style.transform = 'rotate(-9deg) scale(1)'; 
+      visual.style.borderColor = 'var(--line)';
+    }, 350);
   }
-  document.getElementById('analyzeBtn')?.addEventListener('click', ()=>{
-    document.querySelector('.hero-visual').scrollIntoView({behavior:'smooth', block:'center'});
+  
+  // Navigation button, Header actions and Footer actions all scroll to interactive area
+  const scrollAndPulse = () => {
+    document.getElementById('heroVisual')?.scrollIntoView({behavior:'smooth', block:'center'});
     setTimeout(pulseStamp, 400);
-  });
-  document.getElementById('analyzeBtn2')?.addEventListener('click', ()=>{
-    window.scrollTo({top:0, behavior:'smooth'});
-    setTimeout(pulseStamp, 500);
-  });
+  };
+
+  document.getElementById('analyzeBtn')?.addEventListener('click', scrollAndPulse);
+  document.getElementById('analyzeBtn2')?.addEventListener('click', scrollAndPulse);
+  document.getElementById('navCtaBtn')?.addEventListener('click', scrollAndPulse);
 </script>
 
 </body>
