@@ -116,6 +116,8 @@
     color: var(--ink-dim);
   }
   .nav-links a:hover{ color: var(--ink); }
+  
+  /* Класс кнопки в меню */
   .nav-cta{
     background: var(--bull);
     color: #06120E;
@@ -124,6 +126,7 @@
     font-weight: 600;
     font-size: 13px;
     transition: filter 0.15s;
+    border: none;
   }
   .nav-cta:hover{ filter: brightness(1.08); }
   .nav-mobile-hide{ display:flex; }
@@ -506,7 +509,8 @@
         <a href="#samples">Sample grades</a>
         <a href="#faq">FAQ</a>
       </div>
-      <button class="nav-cta" id="navCtaBtn" style="border:none;">Analyze chart free</button>
+      <!-- Кнопка в меню с ID "navCtaBtn" -->
+      <button class="nav-cta" id="navCtaBtn">Analyze chart free</button>
     </nav>
 
     <section class="hero" style="border-top:none; padding-top:88px;">
@@ -515,6 +519,7 @@
         <h1>Know if the setup is <em>real</em><br>before you click buy.</h1>
         <p class="hero-sub">Upload a screenshot of any chart. GradeDesk reads the structure, checks it against your trading profile, and hands back a letter grade with the entry, stop, and targets — in under ten seconds.</p>
         <div class="hero-actions">
+          <!-- Кнопка в шапке с ID "analyzeBtn" -->
           <button class="btn-primary" id="analyzeBtn">
             Grade my next chart
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
@@ -676,6 +681,7 @@
     <div class="wrap">
       <h2>Absolutely free. No card, no catch.</h2>
       <p class="section-sub">Grade unlimited charts whenever you need them.</p>
+      <!-- Кнопка внизу с ID "analyzeBtn2" -->
       <button class="btn-primary" id="analyzeBtn2">Grade my next chart</button>
     </div>
   </section>
@@ -728,7 +734,7 @@
   }
   buildTicker();
 
-  // Interaction behavior
+  // Функция для анимации штампа и рамки графика
   function pulseStamp(){
     const stamp = document.querySelector('.stamp');
     const visual = document.getElementById('heroVisual');
@@ -744,15 +750,26 @@
     }, 350);
   }
   
-  // Navigation button, Header actions and Footer actions all scroll to interactive area
-  const scrollAndPulse = () => {
-    document.getElementById('heroVisual')?.scrollIntoView({behavior:'smooth', block:'center'});
-    setTimeout(pulseStamp, 400);
+  // Плавный скролл к графику
+  const scrollAndPulse = (e) => {
+    if (e) e.preventDefault(); // Предотвращаем перезагрузку страницы или скачок
+    const target = document.getElementById('heroVisual');
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(pulseStamp, 400);
+    }
   };
 
-  document.getElementById('analyzeBtn')?.addEventListener('click', scrollAndPulse);
-  document.getElementById('analyzeBtn2')?.addEventListener('click', scrollAndPulse);
-  document.getElementById('navCtaBtn')?.addEventListener('click', scrollAndPulse);
+  // Навешиваем слушатели событий на кнопки
+  document.addEventListener('DOMContentLoaded', () => {
+    const btn1 = document.getElementById('analyzeBtn');
+    const btn2 = document.getElementById('analyzeBtn2');
+    const navBtn = document.getElementById('navCtaBtn');
+
+    if (btn1) btn1.addEventListener('click', scrollAndPulse);
+    if (btn2) btn2.addEventListener('click', scrollAndPulse);
+    if (navBtn) navBtn.addEventListener('click', scrollAndPulse);
+  });
 </script>
 
 </body>
