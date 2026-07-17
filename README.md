@@ -981,7 +981,7 @@
     }
 
     // Цепочка моделей для автоматического фолбэка при перегрузках или ошибках
-    const MODEL_FALLBACK_CHAIN = ['gemini-1.5-flash', 'gemini-2.5-flash', 'gemini-2.5-flash-lite'];
+    const MODEL_FALLBACK_CHAIN = ['gemini-1.5-flash', 'gemini-1.5-flash-8b', 'gemini-1.5-pro'];
 
     // Функция отправки запроса в Gemini API с внедренной базой знаний из 3 видео
     async function analyzeWithAI(base64Image, mimeType, apiKey) {
