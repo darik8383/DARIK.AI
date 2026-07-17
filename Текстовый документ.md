@@ -401,6 +401,53 @@
     display: none;
   }
 
+  /* Bias-бейдж (Bullish/Bearish/Neutral) */
+  .bias-badge {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .bias-badge.bullish { color: var(--bull); background: rgba(0,217,163,0.12); border: 1px solid rgba(0,217,163,0.35); }
+  .bias-badge.bearish { color: var(--bear); background: rgba(255,92,92,0.12); border: 1px solid rgba(255,92,92,0.35); }
+  .bias-badge.neutral { color: var(--ink-faint); background: rgba(139,150,163,0.12); border: 1px solid var(--line); }
+
+  /* Чек-лист правил (SMC/ICT + Price Action confluence) */
+  .checklist {
+    margin-top: 14px;
+    display: none;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .checklist.visible { display: flex; }
+  .check-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 12.5px;
+    background: var(--bg-raised);
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    padding: 10px 12px;
+  }
+  .check-icon {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 13px;
+    flex-shrink: 0;
+    width: 18px;
+    text-align: center;
+    line-height: 1.4;
+  }
+  .check-icon.pass { color: var(--bull); }
+  .check-icon.fail { color: var(--bear); }
+  .check-icon.unclear { color: var(--ink-faint); }
+  .check-body .rule { color: var(--ink); font-weight: 600; margin-bottom: 2px; }
+  .check-body .note { color: var(--ink-dim); line-height: 1.45; }
+
   /* ---------- Section shared ---------- */
   section{ padding: 76px 0; border-top: 1px solid var(--line); }
   .section-head{
@@ -662,7 +709,10 @@
         <!-- 2. Превью и Статистика (когда файл выбран) -->
         <div class="preview-container" id="previewContainer">
           <div class="visual-head">
-            <span class="sym" id="outputAsset">UPLOADED CHART</span>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="sym" id="outputAsset">UPLOADED CHART</span>
+              <span class="bias-badge" id="outBias" style="display:none;"></span>
+            </div>
             <div class="dot-row"><span></span><span></span><span></span></div>
           </div>
           
@@ -688,6 +738,9 @@
 
     <!-- Блок текстового объяснения от ИИ под графиком -->
     <div class="analysis-note" id="analysisExplanation"></div>
+
+    <!-- Чек-лист правил SMC/ICT + Price Action, которые проверяет ИИ -->
+    <div class="checklist" id="confluenceChecklist"></div>
   </div>
 
   <section id="how">
@@ -713,7 +766,7 @@
         <div class="flow-step">
           <span class="flow-tag">STEP 3 — GRADE</span>
           <h3>Get a graded plan</h3>
-          <p>A letter grade, entry, invalidation, and two profit targets. Skip the setups graded C and below — that's the whole point.</p>
+          <p>A letter grade, entry, invalidation, and profit targets. Skip the setups graded C and below — that's the whole point.</p>
         </div>
       </div>
     </div>
@@ -753,14 +806,14 @@
         </div>
         <div class="gcard">
           <div class="gcard-top">
-            <div><div class="gcard-sym">SOL/USDT · 5M</div><div class="gcard-tf">Late-entry chase</div></div>
+            <div><div class="gcard-sym">SOL/USDT · 1M</div><div class="gcard-tf">Late-entry chase, no HTF context</div></div>
             <div class="badge d">D</div>
           </div>
           <div class="gcard-row"><span class="l">Entry</span><span class="v">146.20</span></div>
           <div class="gcard-row"><span class="l">Stop</span><span class="v">143.10</span></div>
           <div class="gcard-row"><span class="l">Target 1 / 2 / 3</span><span class="v">148.0 / — / —</span></div>
           <div class="gcard-row"><span class="l">Risk : Reward</span><span class="v">1 : 0.6</span></div>
-          <div class="gcard-note">Already extended 4% off the base with no pullback. Stop is wide, target is close. Let it come back.</div>
+          <div class="gcard-note">1-minute chart, no higher-timeframe structure visible, already extended off the base. High noise risk — capped grade regardless of the pattern shape.</div>
         </div>
       </div>
     </div>
@@ -788,11 +841,11 @@
       <div class="flow">
         <div class="flow-step">
           <h3>Is this financial advice?</h3>
-          <p>No. GradeDesk grades chart structure against your own rules — it doesn't know your account size or your life. Every grade is a starting point, not an order.</p>
+          <p>No. GradeDesk grades chart structure against a fixed rulebook — it doesn't know your account size or your life, and a high grade is a read on visible confluence, not a guarantee. Every grade is a starting point, not an order.</p>
         </div>
         <div class="flow-step">
-          <h3>What's a "trading profile"?</h3>
-          <p>The risk tolerance, timeframe, and instruments you tell GradeDesk about once. Every grade after that is checked against your rules, not a generic template.</p>
+          <h3>Why did an "A" setup still lose?</h3>
+          <p>Because trading is probabilistic, not deterministic — even a textbook setup can get stopped out. Check the confluence checklist under each grade to see exactly what the AI could and couldn't verify from your screenshot.</p>
         </div>
         <div class="flow-step">
           <h3>Can I export a grade?</h3>
@@ -826,7 +879,7 @@
         </div>
       </div>
       <div class="foot-bottom">
-        <div class="foot-legal">GradeDesk is a free chart-analysis tool, not a licensed financial advisor. Grades reflect technical structure only and are not investment advice. Trading involves risk of loss.</div>
+        <div class="foot-legal">GradeDesk is a free chart-analysis tool, not a licensed financial advisor. Grades reflect technical structure only and are not investment advice or a guarantee of outcome. Trading involves risk of loss.</div>
         <div>© 2026 GRADEDESK</div>
       </div>
     </div>
@@ -890,6 +943,7 @@
     
     // Элементы вывода ИИ
     const outputAsset = document.getElementById('outputAsset');
+    const outBias = document.getElementById('outBias');
     const gradeStamp = document.getElementById('gradeStamp');
     const outEntry = document.getElementById('outEntry');
     const outStop = document.getElementById('outStop');
@@ -898,6 +952,7 @@
     const outTP2 = document.getElementById('outTP2');
     const outTP3 = document.getElementById('outTP3');
     const analysisExplanation = document.getElementById('analysisExplanation');
+    const confluenceChecklist = document.getElementById('confluenceChecklist');
 
     // Восстанавливаем API-ключ из памяти браузера, если он вводился ранее
     if (localStorage.getItem('gemini_api_key')) {
@@ -968,6 +1023,9 @@
         // Скрываем прошлые результаты
         gradeStamp.classList.remove('visible');
         analysisExplanation.style.display = 'none';
+        outBias.style.display = 'none';
+        confluenceChecklist.classList.remove('visible');
+        confluenceChecklist.innerHTML = '';
 
         // Проверяем наличие ключа и запускаем анализ
         const apiKey = apiKeyInput.value.trim();
@@ -980,121 +1038,160 @@
       };
     }
 
-    // Цепочка моделей для автоматического фолбэка при перегрузках или ошибках
-    const MODEL_FALLBACK_CHAIN = ['gemini-1.5-flash', 'gemini-1.5-flash-8b', 'gemini-1.5-pro'];
+    // Цепочка моделей: только модели, реально доступные на бесплатном тарифе.
+    // ВАЖНО: с 1 апреля 2026 Google убрал все "-pro" модели из бесплатного тарифа —
+    // они требуют включённого биллинга и без него отдают 403. Поэтому здесь
+    // только Flash-линейка, она остаётся бесплатной.
+    const MODEL_FALLBACK_CHAIN = ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-flash-lite-latest'];
 
-    // Функция отправки запроса в Gemini API с внедренной базой знаний из 3 видео
+    // Функция отправки запроса в Gemini API: методология SMC/ICT + Price Action + Trend-following,
+    // с честным чек-листом и жёстким правилом по таймфрейму, плюс retry/fallback на 503/429.
     async function analyzeWithAI(base64Image, mimeType, apiKey) {
       loadingOverlay.style.display = 'flex';
 
-      // Мощнейший системный промпт, объединяющий SMC, Price Action и Trend Following из обучения
-      const systemPrompt = `You are an elite, risk-managed prop trading analyst. Analyze the provided chart screenshot and grade the setup. 
-Strictly apply the following hybrid SMC & Price Action strategy rules to determine the setup:
+      const systemPrompt = `You are an elite trading analyst grading a chart screenshot using a strict, rule-based methodology combining Smart Money Concepts (SMC/ICT), classic Price Action, and trend-following principles. Apply ONLY the rules below — do not invent additional criteria.
 
-1. DIRECTIONAL BIAS, TREND & STRUCTURE:
-- Identify market structure (bullish/bearish). A trend change (CHoCH) is valid ONLY if a candle body closes past the swing high/low (wicks do not count as a break/shift of structure, only liquidity sweeps).
-- For structure, focus only on major swing points (clear turning points). Ignore minor internal structure as it creates noise.
-- Determine if the price is in the Premium zone (sell zone above 50% equilibrium) or Discount zone (buy zone below 50% equilibrium) of the current trading range.
-- Look at the 200 MA if visible: if the price is above and 200 MA is sloping up, look primarily for Longs; if below and sloping down, primarily for Shorts.
-- TIMEFRAME WARNING: If the screenshot shows a low timeframe (1M, 3M, 5M):
-  a) Explicitly warn the user in your "explanation" that trading low timeframes without Higher Timeframe (15M/1H) trend alignment is extremely high risk (high probability of stop-outs due to market noise).
-  b) Strictly downgrade the setup's grade (never give an A or B grade to a standalone 1M/3M/5M chart unless there is incredibly clear high-timeframe structural alignment visible in the same picture). 
-  c) If no HTF POI or context is displayed, default the grade to C, D, or F to keep the trader out of low-probability noise trades.
+METHODOLOGY:
 
-2. LIQUIDITY & ENTRY CONDITIONS (SMC/ICT):
-- Do not enter unless a key liquidity sweep (run on liquidity / wick sweep of session highs/lows like Asia/Frankfurt) has occurred before the setup.
-- Identify the nearest valid Order Block (OB) or Fair Value Gap (FVG). A valid OB must be pro-trend, have swept liquidity, and contain an unfilled FVG (no wick overlap between 1st and 3rd candles).
-- For confirmation, look for a market structure shift (MSS) on lower timeframes (e.g., 1M) inside the higher timeframe POI (15M).
-- Never enter before the "Inducement" level (first minor pullback after a structural shift) is swept by the market.
+1. MARKET STRUCTURE & TREND
+- Trend is defined by swing points only (clear structural highs/lows), not minor internal wicks. Ignore minor internal structure — it creates noise.
+- An uptrend requires at least two consecutive higher-high + higher-low swings; a downtrend the mirror.
+- A structure break (BOS) or change of character (CHoCH) counts only on a candle CLOSE beyond the swing point — a wick poke alone does not break structure.
+- Determine whether price sits in the Premium zone (upper half, sell-side) or Discount zone (lower half, buy-side) of the current visible trading range; the 50% level is equilibrium.
+- If a 200-period moving average is visible: price above a rising 200MA = bullish context; below a falling 200MA = bearish context.
 
-3. PRICE ACTION & CANDLESTICKS CONFIRMATION:
-- Analyze candle anatomy: pay attention to long shadows (price rejection) and high-volume pin bars (Hammer/Hanging Man) at key support/resistance levels.
-- Confirm breakouts only if the candle body closes outside the range/level (no mere wick penetrations).
-- If trading a Chart Pattern (Rectangle, Cup & Handle, Head & Shoulders), ensure the Right Shoulder is at least 50% of the Head's height, and avoid sharp V-shaped bottoms.
+2. LIQUIDITY
+- Before trusting a setup, check whether price has swept (wicked through and reversed from) an obvious liquidity pool — equal highs/lows, session high/low, or a swing extreme — just before the move you are grading.
+- A move that has NOT swept nearby liquidity first is lower quality / possibly premature.
+- Never treat a setup as confirmed until the "inducement" level (the first minor pullback after a structure shift) has also been swept.
 
-4. RISK MANAGEMENT & THREE TARGETS:
-- Entry: Recommend a precise entry level based on the OB, FVG, or confirmation shift.
-- Stop-Loss (SL): Place strictly at invalidation levels (below the swing low/OB for longs, above the swing high/OB for shorts), never "by feeling".
-- Take-Profit 1 (Conservative): Target the nearest local liquidity pool / minor structural swing.
-- Take-Profit 2 (Moderate): Target major key liquidity or the next solid key level.
-- Take-Profit 3 (Aggressive): Target the major structural swing high/low (origin of the opposite move).
-- Minimum Risk-to-Reward (R:R) must be 1:2.5 or higher to grade the setup above C. Target 1:5 for clean Daily Bias plays.
+3. ORDER BLOCK QUALITY (score against these 3 checks)
+- (a) The order block candle aligns with the higher-timeframe trend (protrend).
+- (b) It was preceded by a liquidity run/sweep at a local extreme.
+- (c) It contains a Fair Value Gap and led to a break of structure afterward.
+An order block satisfying fewer than 2 of these 3 is weak.
 
-Return ONLY a valid raw JSON object. Do not wrap it in markdown blocks or write any text before/after.
-JSON format exactly:
+4. FAIR VALUE GAP (FVG)
+- Valid FVG = a 3-candle sequence where candle 1 and candle 3 wicks do not overlap.
+- Only trust FVGs that align with the prevailing trend; counter-trend FVGs are usually invalidated.
+
+5. CANDLESTICK / PRICE ACTION CONFIRMATION
+- Judge rejection strength by wick length and candle body: a bullish marubozu (open=low, close=high) is maximum-strength bullish; a hammer is only valid after a preceding downtrend; a hanging man only after a preceding uptrend.
+- A pin bar's significance scales with its size relative to recent candles and the strength of the prior move — a small pin bar after a strong impulse is likely just a pause, not a reversal.
+- If grading a chart pattern (Rectangle, Cup & Handle, Head & Shoulders): the right shoulder must be at least 50% of the head's height, and avoid sharp V-shaped cup bottoms.
+
+6. BREAKOUT VALIDITY
+- A breakout of support/resistance/trendline is only confirmed by a candle body CLOSE beyond the level — a wick alone is not enough.
+- Prefer setups where price has retested the broken level before continuing, over setups chasing the breakout candle itself.
+- A trendline is only valid with 3+ touches, not 2.
+
+7. VOLUME (only assess if a volume pane is visible in the screenshot; otherwise mark "unclear")
+- Rising price on falling/thin volume = weak, likely retail-driven move, not institutional.
+- Confirm breakouts and impulse moves with visibly elevated volume.
+
+8. TIMEFRAME RISK — CRITICAL, APPLY STRICTLY
+- If the screenshot is a low timeframe (1M, 3M, 5M) with no visible higher-timeframe structure or context in the same image, treat this as a HIGH-RISK, high-noise setup by default.
+- In that case: explicitly say so in "explanation" (a low timeframe without higher-timeframe trend alignment carries a high probability of getting stopped out on noise, regardless of how clean the local pattern looks), and cap the grade at C or below — never award an A or B to a standalone 1M/3M/5M screenshot unless the image itself shows clear higher-timeframe alignment.
+
+9. STOP-LOSS & RISK:REWARD
+- Stop-loss must sit at the price level that would invalidate the setup (beyond the order block/FVG/swing extreme/pattern-defining level) — never an arbitrary distance.
+- Minimum acceptable risk:reward for an order-block style entry is 1:2.5; aim for 1:5 on clean higher-timeframe bias trades. Flag as weak if your calculated R:R for target1 is below 1:2.5.
+
+GRADING:
+- Grade A/A+ = strong confluence across most of the checklist items below, clean structure, adequate timeframe context, R:R ≥ 1:2.5.
+- Grade B/C = partial confluence, some rules unmet or unclear from the image, thin R:R, or insufficient timeframe context.
+- Grade D/F = structure unclear, rules violated (entry against trend, no liquidity sweep, wick-only breakout, poor R:R), or the setup is a late chase.
+
+HONESTY RULE — CRITICAL: A grade is a read on visible technical confluence, not a prediction or guarantee. Even a textbook A-grade setup can still be stopped out — markets are probabilistic, not deterministic. Never imply certainty in the explanation. Only mark a checklist item "pass" if you can actually see supporting evidence in the image; if the screenshot doesn't show enough candle history, has no volume pane, or the relevant detail simply isn't visible, mark that item "unclear" instead of guessing "pass". Never fabricate certainty.
+
+Return ONLY a valid raw JSON object. No markdown fences, no text before or after. JSON format exactly:
 {
-  "asset": "Name of currency pair/stock/crypto and timeframe (e.g. BTCUSD, 15M)",
+  "asset": "Symbol and timeframe visible on the chart (e.g. XAUUSD, 1M)",
+  "bias": "Bullish, Bearish, or Neutral — overall directional bias from structure",
   "grade": "Letter grade (A+, A, B, C, D, or F)",
-  "entry": "Approximate level for entry",
-  "stop": "Recommended stop-loss price",
-  "target1": "Take-profit price target 1 (Conservative)",
-  "target2": "Take-profit price target 2 (Moderate)",
-  "target3": "Take-profit price target 3 (Aggressive)",
-  "rr": "Risk-to-reward ratio based on targets",
-  "explanation": "Brief 1-2 sentence professional analysis of key indicators, support/resistance, trend, and reasoning for the grade."
+  "entry": "Approximate entry price level",
+  "stop": "Stop-loss price, placed at the setup's invalidation level",
+  "target1": "First take-profit — conservative, closest target",
+  "target2": "Second take-profit — medium target",
+  "target3": "Third take-profit — extended/stretch target",
+  "rr": "Risk-to-reward ratio for target1 (e.g. 1:2.5)",
+  "checklist": [
+    {"rule": "Market Structure", "status": "pass, fail, or unclear", "note": "one short sentence"},
+    {"rule": "Liquidity Sweep", "status": "pass, fail, or unclear", "note": "one short sentence"},
+    {"rule": "Order Block Quality", "status": "pass, fail, or unclear", "note": "one short sentence"},
+    {"rule": "Fair Value Gap", "status": "pass, fail, or unclear", "note": "one short sentence"},
+    {"rule": "Candle Confirmation", "status": "pass, fail, or unclear", "note": "one short sentence"},
+    {"rule": "Breakout & Retest", "status": "pass, fail, or unclear", "note": "one short sentence"},
+    {"rule": "Volume", "status": "pass, fail, or unclear", "note": "one short sentence"},
+    {"rule": "Timeframe Context (HTF alignment)", "status": "pass, fail, or unclear", "note": "one short sentence"}
+  ],
+  "explanation": "2-3 sentence overall summary tying the checklist together, flagging timeframe risk if relevant, and justifying the grade."
 }`;
 
-      // Реализуем обход по цепочке моделей на случай ошибок
-      let lastError = null;
-
-      for (const modelName of MODEL_FALLBACK_CHAIN) {
-        try {
-          const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
-
-          const requestBody = {
-            contents: [
+      const requestBody = {
+        contents: [
+          {
+            parts: [
+              { text: systemPrompt },
               {
-                parts: [
-                  { text: systemPrompt },
-                  {
-                    inlineData: {
-                      mimeType: mimeType,
-                      data: base64Image
-                    }
-                  }
-                ]
+                inlineData: {
+                  mimeType: mimeType,
+                  data: base64Image
+                }
               }
             ]
-          };
-
-          const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestBody)
-          });
-
-          if (!response.ok) {
-            throw new Error(`Model ${modelName} returned error: ${response.status} ${response.statusText}`);
           }
+        ]
+      };
 
-          const data = await response.json();
-          
-          if (!data.candidates || data.candidates.length === 0) {
-            throw new Error(`Empty response from model ${modelName}`);
+      let lastErrorMessage = 'Unknown error';
+
+      for (const model of MODEL_FALLBACK_CHAIN) {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+        // До 2 попыток на модель — актуально для временных 503/429
+        for (let attempt = 1; attempt <= 2; attempt++) {
+          try {
+            const response = await fetch(url, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(requestBody)
+            });
+
+            if (response.status === 503 || response.status === 429) {
+              lastErrorMessage = `${model}: сервер перегружен (${response.status})`;
+              await new Promise(r => setTimeout(r, 1200 * attempt));
+              continue; // ещё одна попытка той же модели
+            }
+
+            if (!response.ok) {
+              lastErrorMessage = `${model}: ошибка ${response.status} ${response.statusText}`;
+              break; // не 503/429 — сразу к следующей модели
+            }
+
+            const data = await response.json();
+
+            if (!data.candidates || data.candidates.length === 0) {
+              lastErrorMessage = `${model}: пустой ответ`;
+              break;
+            }
+
+            let jsonText = data.candidates[0].content.parts[0].text;
+            jsonText = jsonText.replace(/```json/g, "").replace(/```/g, "").trim();
+
+            const result = JSON.parse(jsonText);
+            displayResults(result);
+            loadingOverlay.style.display = 'none';
+            return; // успех — выходим полностью
+
+          } catch (error) {
+            lastErrorMessage = `${model}: ${error.message}`;
           }
-
-          // Извлекаем текст ответа ИИ
-          let jsonText = data.candidates[0].content.parts[0].text;
-          
-          // Очищаем от возможных markdown-оберток ```json ... ```, если ИИ их добавил
-          jsonText = jsonText.replace(/```json/g, "").replace(/```/g, "").trim();
-          
-          const result = JSON.parse(jsonText);
-          displayResults(result);
-          
-          // Успешно выполнено — выходим из функции
-          loadingOverlay.style.display = 'none';
-          return;
-
-        } catch (error) {
-          console.warn(`Attempt with ${modelName} failed: ${error.message}. Trying next model...`);
-          lastError = error;
         }
       }
 
-      // Если все модели вернули ошибку
-      console.error(lastError);
-      alert(`Analysis failed: ${lastError.message}. Please check your API key, internet connection, or try again later.`);
+      console.error(lastErrorMessage);
+      alert(`Модели Gemini сейчас недоступны или перегружены. Попробуйте ещё раз через минуту.\n\nДетали: ${lastErrorMessage}`);
       loadingOverlay.style.display = 'none';
     }
 
@@ -1102,7 +1199,18 @@ JSON format exactly:
     function displayResults(data) {
       // 1. Указываем актив
       outputAsset.textContent = data.asset || "GRADED SETUP";
-      
+
+      // 1b. Bias-бейдж
+      if (data.bias) {
+        const biasClean = String(data.bias).trim();
+        outBias.textContent = biasClean;
+        outBias.style.display = "inline-block";
+        const b = biasClean.toLowerCase();
+        outBias.className = "bias-badge " + (b.includes("bull") ? "bullish" : b.includes("bear") ? "bearish" : "neutral");
+      } else {
+        outBias.style.display = "none";
+      }
+
       // 2. Оформляем штамп
       const cleanGrade = (data.grade || "C").toUpperCase();
       gradeStamp.innerHTML = `${cleanGrade}<small>SETUP</small>`;
@@ -1121,9 +1229,52 @@ JSON format exactly:
       outTP2.textContent = data.target2 || "—";
       outTP3.textContent = data.target3 || "—";
 
-      // 4. Текстовое саммари
+      // 4. Текстовое саммари (безопасно, без innerHTML с текстом от ИИ)
+      analysisExplanation.innerHTML = "";
+      const strongEl = document.createElement("strong");
+      strongEl.textContent = "🔮 AI Analysis: ";
+      const textEl = document.createElement("span");
+      textEl.textContent = data.explanation || "No explanation provided.";
+      analysisExplanation.appendChild(strongEl);
+      analysisExplanation.appendChild(textEl);
       analysisExplanation.style.display = "block";
-      analysisExplanation.innerHTML = `<strong>🔮 AI Analysis:</strong> ${data.explanation || "No explanation provided."}`;
+
+      // 5. Чек-лист правил (SMC/ICT + Price Action confluence)
+      confluenceChecklist.innerHTML = "";
+      if (Array.isArray(data.checklist) && data.checklist.length > 0) {
+        data.checklist.forEach(item => {
+          const status = String(item.status || "unclear").toLowerCase();
+          const iconClass = status === "pass" ? "pass" : status === "fail" ? "fail" : "unclear";
+          const iconChar = status === "pass" ? "✓" : status === "fail" ? "✕" : "–";
+
+          const row = document.createElement("div");
+          row.className = "check-item";
+
+          const icon = document.createElement("div");
+          icon.className = "check-icon " + iconClass;
+          icon.textContent = iconChar;
+
+          const body = document.createElement("div");
+          body.className = "check-body";
+
+          const ruleEl = document.createElement("div");
+          ruleEl.className = "rule";
+          ruleEl.textContent = item.rule || "";
+
+          const noteEl = document.createElement("div");
+          noteEl.className = "note";
+          noteEl.textContent = item.note || "";
+
+          body.appendChild(ruleEl);
+          body.appendChild(noteEl);
+          row.appendChild(icon);
+          row.appendChild(body);
+          confluenceChecklist.appendChild(row);
+        });
+        confluenceChecklist.classList.add("visible");
+      } else {
+        confluenceChecklist.classList.remove("visible");
+      }
     }
   });
 </script>
