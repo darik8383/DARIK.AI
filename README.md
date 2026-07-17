@@ -984,12 +984,39 @@
     // упёрлись в лимит (429) — переходим к следующей вместо того, чтобы просто упасть.
     const MODEL_FALLBACK_CHAIN = ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-flash-lite-latest'];
 
-    // Функция отправки запроса в Gemini API с ретраями и fallback на другую модель
+    // Функция отправки запроса в Gemini API с внедренной базой знаний из 3 видео
     async function analyzeWithAI(base64Image, mimeType, apiKey) {
       loadingOverlay.style.display = 'flex';
 
-      // Системный промпт для разбора графика в строгом формате JSON
+      // Мощнейший системный промпт, объединяющий SMC, Price Action и Trend Following из обучения
       const systemPrompt = `You are an elite, risk-managed prop trading analyst. Analyze the provided chart screenshot and grade the setup. 
+Strictly apply the following hybrid SMC & Price Action strategy rules to determine the setup:
+
+1. DIRECTIONAL BIAS, TREND & STRUCTURE:
+- Identify market structure (bullish/bearish). A trend change (CHoCH) is valid ONLY if a candle body closes past the swing high/low (wicks do not count as a break/shift of structure, only liquidity sweeps).
+- For structure, focus only on major swing points (clear turning points). Ignore minor internal structure as it creates noise.
+- Determine if the price is in the Premium zone (sell zone above 50% equilibrium) or Discount zone (buy zone below 50% equilibrium) of the current trading range.
+- Look at the 200 MA if visible: if the price is above and 200 MA is sloping up, look primarily for Longs; if below and sloping down, primarily for Shorts.
+
+2. LIQUIDITY & ENTRY CONDITIONS (SMC/ICT):
+- Do not enter unless a key liquidity sweep (run on liquidity / wick sweep of session highs/lows like Asia/Frankfurt) has occurred before the setup.
+- Identify the nearest valid Order Block (OB) or Fair Value Gap (FVG). A valid OB must be pro-trend, have swept liquidity, and contain an unfilled FVG (no wick overlap between 1st and 3rd candles).
+- For confirmation, look for a market structure shift (MSS) on lower timeframes (e.g., 1M) inside the higher timeframe POI (15M).
+- Never enter before the "Inducement" level (first minor pullback after a structural shift) is swept by the market.
+
+3. PRICE ACTION & CANDLESTICKS CONFIRMATION:
+- Analyze candle anatomy: pay attention to long shadows (price rejection) and high-volume pin bars (Hammer/Hanging Man) at key support/resistance levels.
+- Confirm breakouts only if the candle body closes outside the range/level (no mere wick penetrations).
+- If trading a Chart Pattern (Rectangle, Cup & Handle, Head & Shoulders), ensure the Right Shoulder is at least 50% of the Head's height, and avoid sharp V-shaped bottoms.
+
+4. RISK MANAGEMENT & THREE TARGETS:
+- Entry: Recommend a precise entry level based on the OB, FVG, or confirmation shift.
+- Stop-Loss (SL): Place strictly at invalidation levels (below the swing low/OB for longs, above the swing high/OB for shorts), never "by feeling".
+- Take-Profit 1 (Conservative): Target the nearest local liquidity pool / minor structural swing.
+- Take-Profit 2 (Moderate): Target major key liquidity or the next solid key level.
+- Take-Profit 3 (Aggressive): Target the major structural swing high/low (origin of the opposite move).
+- Minimum Risk-to-Reward (R:R) must be 1:2.5 or higher to grade the setup above C. Target 1:5 for clean Daily Bias plays.
+
 Return ONLY a valid raw JSON object. Do not wrap it in markdown blocks or write any text before/after.
 JSON format exactly:
 {
@@ -997,12 +1024,15 @@ JSON format exactly:
   "grade": "Letter grade (A+, A, B, C, D, or F)",
   "entry": "Approximate level for entry",
   "stop": "Recommended stop-loss price",
-  "target1": "First take-profit price - closest, conservative target",
-  "target2": "Second take-profit price - medium target",
-  "target3": "Third take-profit price - extended/stretch target",
-  "rr": "Risk-to-reward ratio for target1 (e.g., 1:2.5)",
+  "target1": "Take-profit price target 1 (Conservative)",
+  "target2": "Take-profit price target 2 (Moderate)",
+  "target3": "Take-profit price target 3 (Aggressive)",
+  "rr": "Risk-to-reward ratio based on targets",
   "explanation": "Brief 1-2 sentence professional analysis of key indicators, support/resistance, trend, and reasoning for the grade."
 }`;
+
+      // Исправленный URL, который гарантированно принимает запросы с картинками
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
       const requestBody = {
         contents: [
@@ -1020,55 +1050,34 @@ JSON format exactly:
         ]
       };
 
-      let lastErrorMessage = 'Unknown error';
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody)
+        });
 
-      for (const model of MODEL_FALLBACK_CHAIN) {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-
-        // На каждую модель — до 2 попыток с небольшой паузой (актуально для 503/429)
-        for (let attempt = 1; attempt <= 2; attempt++) {
-          try {
-            const response = await fetch(url, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(requestBody)
-            });
-
-            if (response.status === 503 || response.status === 429) {
-              lastErrorMessage = `${model}: сервер перегружен (${response.status})`;
-              await new Promise(r => setTimeout(r, 1200 * attempt));
-              continue; // ещё одна попытка той же модели
-            }
-
-            if (!response.ok) {
-              lastErrorMessage = `${model}: ошибка ${response.status} ${response.statusText}`;
-              break; // не 503/429 — сразу пробуем следующую модель, а не повторяем эту же
-            }
-
-            const data = await response.json();
-
-            // Извлекаем текст ответа ИИ
-            let jsonText = data.candidates[0].content.parts[0].text;
-
-            // Очищаем от возможных markdown-оберток ```json ... ```, если ИИ их добавил
-            jsonText = jsonText.replace(/```json/g, "").replace(/```/g, "").trim();
-
-            const result = JSON.parse(jsonText);
-            displayResults(result);
-            loadingOverlay.style.display = 'none';
-            return; // успех — выходим из функции полностью
-
-          } catch (error) {
-            lastErrorMessage = `${model}: ${error.message}`;
-          }
+        if (!response.ok) {
+          throw new Error(`API returned error: ${response.status} ${response.statusText}`);
         }
-        // все попытки для этой модели исчерпаны — переходим к следующей модели в цепочке
-      }
 
-      // Все модели и попытки исчерпаны
-      console.error(lastErrorMessage);
-      alert(`Модели Gemini сейчас перегружены или недоступны. Попробуйте ещё раз через минуту.\n\nДетали: ${lastErrorMessage}`);
-      loadingOverlay.style.display = 'none';
+        const data = await response.json();
+        
+        // Извлекаем текст ответа ИИ
+        let jsonText = data.candidates[0].content.parts[0].text;
+        
+        // Очищаем от возможных markdown-оберток ```json ... ```, если ИИ их добавил
+        jsonText = jsonText.replace(/```json/g, "").replace(/```/g, "").trim();
+        
+        const result = JSON.parse(jsonText);
+        displayResults(result);
+
+      } catch (error) {
+        console.error(error);
+        alert(`Analysis failed: ${error.message}. Please double-check your API key or image quality.`);
+      } finally {
+        loadingOverlay.style.display = 'none';
+      }
     }
 
     // Отображение полученных результатов
