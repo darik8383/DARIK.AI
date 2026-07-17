@@ -980,9 +980,8 @@
       };
     }
 
-    // Цепочка моделей: пробуем по порядку. Если модель перегружена (503) или
-    // упёрлись в лимит (429) — переходим к следующей вместо того, чтобы просто упасть.
-    const MODEL_FALLBACK_CHAIN = ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-flash-lite-latest'];
+    // Цепочка моделей для автоматического фолбэка при перегрузках или ошибках
+    const MODEL_FALLBACK_CHAIN = ['gemini-1.5-flash', 'gemini-2.5-flash', 'gemini-2.5-flash-lite'];
 
     // Функция отправки запроса в Gemini API с внедренной базой знаний из 3 видео
     async function analyzeWithAI(base64Image, mimeType, apiKey) {
@@ -997,6 +996,10 @@ Strictly apply the following hybrid SMC & Price Action strategy rules to determi
 - For structure, focus only on major swing points (clear turning points). Ignore minor internal structure as it creates noise.
 - Determine if the price is in the Premium zone (sell zone above 50% equilibrium) or Discount zone (buy zone below 50% equilibrium) of the current trading range.
 - Look at the 200 MA if visible: if the price is above and 200 MA is sloping up, look primarily for Longs; if below and sloping down, primarily for Shorts.
+- TIMEFRAME WARNING: If the screenshot shows a low timeframe (1M, 3M, 5M):
+  a) Explicitly warn the user in your "explanation" that trading low timeframes without Higher Timeframe (15M/1H) trend alignment is extremely high risk (high probability of stop-outs due to market noise).
+  b) Strictly downgrade the setup's grade (never give an A or B grade to a standalone 1M/3M/5M chart unless there is incredibly clear high-timeframe structural alignment visible in the same picture). 
+  c) If no HTF POI or context is displayed, default the grade to C, D, or F to keep the trader out of low-probability noise trades.
 
 2. LIQUIDITY & ENTRY CONDITIONS (SMC/ICT):
 - Do not enter unless a key liquidity sweep (run on liquidity / wick sweep of session highs/lows like Asia/Frankfurt) has occurred before the setup.
@@ -1031,53 +1034,68 @@ JSON format exactly:
   "explanation": "Brief 1-2 sentence professional analysis of key indicators, support/resistance, trend, and reasoning for the grade."
 }`;
 
-      // Исправленный URL, который гарантированно принимает запросы с картинками
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+      // Реализуем обход по цепочке моделей на случай ошибок
+      let lastError = null;
 
-      const requestBody = {
-        contents: [
-          {
-            parts: [
-              { text: systemPrompt },
+      for (const modelName of MODEL_FALLBACK_CHAIN) {
+        try {
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+
+          const requestBody = {
+            contents: [
               {
-                inlineData: {
-                  mimeType: mimeType,
-                  data: base64Image
-                }
+                parts: [
+                  { text: systemPrompt },
+                  {
+                    inlineData: {
+                      mimeType: mimeType,
+                      data: base64Image
+                    }
+                  }
+                ]
               }
             ]
+          };
+
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+          });
+
+          if (!response.ok) {
+            throw new Error(`Model ${modelName} returned error: ${response.status} ${response.statusText}`);
           }
-        ]
-      };
 
-      try {
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(requestBody)
-        });
+          const data = await response.json();
+          
+          if (!data.candidates || data.candidates.length === 0) {
+            throw new Error(`Empty response from model ${modelName}`);
+          }
 
-        if (!response.ok) {
-          throw new Error(`API returned error: ${response.status} ${response.statusText}`);
+          // Извлекаем текст ответа ИИ
+          let jsonText = data.candidates[0].content.parts[0].text;
+          
+          // Очищаем от возможных markdown-оберток ```json ... ```, если ИИ их добавил
+          jsonText = jsonText.replace(/```json/g, "").replace(/```/g, "").trim();
+          
+          const result = JSON.parse(jsonText);
+          displayResults(result);
+          
+          // Успешно выполнено — выходим из функции
+          loadingOverlay.style.display = 'none';
+          return;
+
+        } catch (error) {
+          console.warn(`Attempt with ${modelName} failed: ${error.message}. Trying next model...`);
+          lastError = error;
         }
-
-        const data = await response.json();
-        
-        // Извлекаем текст ответа ИИ
-        let jsonText = data.candidates[0].content.parts[0].text;
-        
-        // Очищаем от возможных markdown-оберток ```json ... ```, если ИИ их добавил
-        jsonText = jsonText.replace(/```json/g, "").replace(/```/g, "").trim();
-        
-        const result = JSON.parse(jsonText);
-        displayResults(result);
-
-      } catch (error) {
-        console.error(error);
-        alert(`Analysis failed: ${error.message}. Please double-check your API key or image quality.`);
-      } finally {
-        loadingOverlay.style.display = 'none';
       }
+
+      // Если все модели вернули ошибку
+      console.error(lastError);
+      alert(`Analysis failed: ${lastError.message}. Please check your API key, internet connection, or try again later.`);
+      loadingOverlay.style.display = 'none';
     }
 
     // Отображение полученных результатов
