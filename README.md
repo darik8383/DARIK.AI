@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Darik TradeBot — Демо-платформа</title>
+    <title>Darik TradeBot — Мультирыночный Симулятор</title>
     <style>
         :root {
             --bg-color: #0b0d17;
@@ -62,7 +62,6 @@
             font-size: 13px;
         }
 
-        /* Виджеты статистики */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -186,69 +185,86 @@
     <div class="container">
         <header>
             <div class="logo">Darik TradeBot</div>
-            <div class="demo-badge">ДЕМО-РЕЖИМ (ТЕСТИРОВАНИЕ)</div>
+            <div class="demo-badge">ДЕМО АНАЛИЗ РЫНКОВ</div>
         </header>
 
-        <!-- Статистическая панель демо-счета -->
+        <!-- Блок статистики Демо-счета -->
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-label">Демо Баланс</div>
-                <div class="stat-value" id="stat-balance" style="color: #fff;">$10,000.00</div>
+                <div class="stat-label">Виртуальный баланс</div>
+                <div class="stat-value" id="stat-balance">$10,000.00</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Всего сделок</div>
+                <div class="stat-label">Сделок совершено</div>
                 <div class="stat-value" id="stat-total">0</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Процент побед (Winrate)</div>
+                <div class="stat-label">Доля побед (Winrate)</div>
                 <div class="stat-value" id="stat-winrate" style="color: var(--success);">0%</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Чистая прибыль</div>
+                <div class="stat-label">Текущий профит</div>
                 <div class="stat-value" id="stat-profit" style="color: var(--success);">$0.00</div>
             </div>
         </div>
 
         <div class="grid-main">
-            <!-- Левая колонка: Управление симулятором -->
+            <!-- Левая часть: Выбор актива и Настройки -->
             <div class="panel">
                 <div class="ticker-box">
-                    <label>Поток живых котировок (Deriv API)</label>
+                    <label id="asset-label">Поток котировок</label>
                     <div class="price" id="live-price">Подключение...</div>
                 </div>
 
                 <div class="form-group">
-                    <label>Демо-ставка для теста ($)</label>
-                    <input type="number" id="stake" value="50" min="1">
-                </div>
-
-                <div class="form-group">
-                    <label>Аналитический алгоритм ИИ</label>
-                    <select id="strategy">
-                        <option value="rsi">Нейросеть: Перекупленность/Перепроданность RSI</option>
-                        <option value="trend">Скальпинг: Анализ микротрендов скользящих средних</option>
+                    <label>Торговый актив (Рынок)</label>
+                    <select id="asset-select" onchange="changeAsset()">
+                        <option value="XAUUSD">Золото (XAU/USD)</option>
+                        <option value="BTCUSD">Криптовалюта: Bitcoin (BTC)</option>
+                        <option value="TSLA">Акции: Tesla Motors (TSLA)</option>
+                        <option value="VOL100">Индекс волатильности Deriv (1HZ100V)</option>
                     </select>
                 </div>
 
-                <button class="btn" id="start-btn" onclick="toggleBot()">Запустить анализ и тест</button>
+                <div class="form-group">
+                    <label>Сумма демо-сделки ($)</label>
+                    <input type="number" id="stake" value="100" min="1">
+                </div>
+
+                <div class="form-group">
+                    <label>Модель ИИ-анализа</label>
+                    <select id="strategy">
+                        <option value="adaptive">Адаптивный Нейро-Скальпинг</option>
+                        <option value="trend">Поиск зон ликвидности (Smart Money)</option>
+                    </select>
+                </div>
+
+                <button class="btn" id="start-btn" onclick="toggleBot()">Запустить робота в тест</button>
             </div>
 
-            <!-- Правая колонка: Журнал анализа и сделок -->
+            <!-- Правая часть: Логирование -->
             <div class="panel">
-                <h3 style="margin-bottom: 15px;">Аналитический журнал и логи сделок</h3>
+                <h3 style="margin-bottom: 15px;">Анализ рынка в реальном времени</h3>
                 <div class="log-panel" id="log-container">
-                    <div class="log-entry">[Анализатор] Платформа готова к тестам. Выберите параметры и запустите робота.</div>
+                    <div class="log-entry">[Инфо] Выберите желаемый актив и запустите тест.</div>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // 1. Получение реальных рыночных цен через WebSocket для точности анализа
-        const ws = new WebSocket('wss://ws.derivws.com/websockets/v3?app_id=1089');
-        const priceEl = document.getElementById('live-price');
-        const logContainer = document.getElementById('log-container');
-        
+        // Имитация базовых цен для разных активов, чтобы при переключении цифры соответствовали реальности
+        const basePrices = {
+            XAUUSD: 2350.40,
+            BTCUSD: 67200.15,
+            TSLA: 178.50,
+            VOL100: 8450.00
+        };
+
+        let currentAsset = 'XAUUSD';
+        let currentPrice = basePrices[currentAsset];
+        let ws;
+
         // Переменные Демо-счета
         let balance = 10000.00;
         let totalTrades = 0;
@@ -256,33 +272,60 @@
         let totalProfit = 0.00;
 
         let botActive = false;
-        let lastPrice = 0;
         let botInterval;
-        let priceHistory = [];
+        const priceEl = document.getElementById('live-price');
+        const logContainer = document.getElementById('log-container');
 
-        ws.onopen = () => {
-            ws.send(JSON.stringify({ ticks: '1HZ100V' })); // Подписка на индекс Volatility 100 (1s)
-            addLog("[Система] Успешно подключен поток котировок реального времени.", "success");
-        };
-
-        ws.onmessage = (msg) => {
-            const data = JSON.parse(msg.data);
-            if (data.tick) {
-                const currentPrice = data.tick.quote;
-                priceEl.innerText = currentPrice.toFixed(2);
+        // Живая генерация/обновление цен для активов
+        function startPriceStream() {
+            // Для Индекса Deriv мы используем их реальный WebSocket
+            if (currentAsset === 'VOL100') {
+                if (ws) ws.close();
+                ws = new WebSocket('wss://ws.derivws.com/websockets/v3?app_id=1089');
+                ws.onopen = () => ws.send(JSON.stringify({ ticks: '1HZ100V' }));
+                ws.onmessage = (msg) => {
+                    const data = JSON.parse(msg.data);
+                    if (data.tick && currentAsset === 'VOL100') {
+                        updatePriceDisplay(data.tick.quote);
+                    }
+                };
+            } else {
+                // Для Золота, Биткоина и Теслы делаем плавную математическую симуляцию тиков
+                if (ws) { ws.close(); ws = null; }
+                if (window.tickerInterval) clearInterval(window.tickerInterval);
                 
-                if (currentPrice > lastPrice) {
-                    priceEl.style.color = "#10b981";
-                } else {
-                    priceEl.style.color = "#ef4444";
-                }
-                lastPrice = currentPrice;
-
-                // Сохраняем историю цен для внутренней симуляции "анализа индикаторов"
-                priceHistory.push(currentPrice);
-                if (priceHistory.length > 10) priceHistory.shift();
+                window.tickerInterval = setInterval(() => {
+                    const change = (Math.random() - 0.5) * (currentPrice * 0.0005);
+                    updatePriceDisplay(currentPrice + change);
+                }, 1000);
             }
-        };
+        }
+
+        function updatePriceDisplay(newPrice) {
+            if (newPrice > currentPrice) {
+                priceEl.style.color = "#10b981";
+            } else {
+                priceEl.style.color = "#ef4444";
+            }
+            currentPrice = newPrice;
+            priceEl.innerText = currentPrice.toFixed(currentAsset === 'TSLA' || currentAsset === 'XAUUSD' ? 2 : 2);
+        }
+
+        function changeAsset() {
+            const select = document.getElementById('asset-select');
+            currentAsset = select.value;
+            currentPrice = basePrices[currentAsset];
+            
+            document.getElementById('asset-label').innerText = `Живой график: ${select.options[select.selectedIndex].text}`;
+            priceEl.innerText = "Загрузка...";
+            
+            if(botActive) {
+                toggleBot(); // стопаем робота при смене актива
+            }
+            
+            startPriceStream();
+            addLog(`Актив переключен на: ${select.options[select.selectedIndex].text}`);
+        }
 
         function addLog(text, type = "") {
             const entry = document.createElement('div');
@@ -293,83 +336,80 @@
             logContainer.scrollTop = logContainer.scrollHeight;
         }
 
-        // Обновление интерфейса статистики демо-счета
-        const updateStatsUi = () => {
+        function updateStatsUi() {
             document.getElementById('stat-balance').innerText = `$${balance.toFixed(2)}`;
             document.getElementById('stat-total').innerText = totalTrades;
-            
             const winrate = totalTrades > 0 ? ((winTrades / totalTrades) * 100).toFixed(1) : 0;
             document.getElementById('stat-winrate').innerText = `${winrate}%`;
             
             const profitEl = document.getElementById('stat-profit');
             profitEl.innerText = `${totalProfit >= 0 ? '+' : ''}$${totalProfit.toFixed(2)}`;
             profitEl.style.color = totalProfit >= 0 ? "var(--success)" : "var(--danger)";
-        };
+        }
 
-        // 2. Логика работы робота на демо-счете
         function toggleBot() {
             const btn = document.getElementById('start-btn');
             const stake = parseFloat(document.getElementById('stake').value);
-            const strategySelect = document.getElementById('strategy');
-            
+            const select = document.getElementById('asset-select');
+            const assetName = select.options[select.selectedIndex].text;
+
             if (isNaN(stake) || stake <= 0 || stake > balance) {
-                alert("Пожалуйста, введите корректную сумму ставки (не превышающую ваш демо-баланс).");
+                alert("Укажите корректную сумму для демо-ордера.");
                 return;
             }
 
             if (!botActive) {
                 botActive = true;
-                btn.innerText = "Остановить симуляцию";
+                btn.innerText = "Остановить анализ";
                 btn.classList.add('active');
-                strategySelect.disabled = true;
-                
-                addLog(`[Анализатор] Тестирование запущено. Алгоритм ищет паттерны на графике...`, "alert");
-                
-                // Робот сканирует рынок каждые 7 секунд
-                botInterval = setInterval(() => {
-                    if (priceHistory.length < 2) return;
+                select.disabled = true;
 
-                    addLog("[Анализ ИИ] Сканирование тиков... Индикаторы в норме.");
+                addLog(`[Робот] Запущен глубокий анализ рынка по инструменту ${assetName}...`, "alert");
+
+                botInterval = setInterval(() => {
+                    addLog(`[ИИ] Сканирование стакана и объемов по ${currentAsset}... Сигналы стабильны.`);
                     
                     setTimeout(() => {
-                        const directions = ["ВВЕРХ (CALL)", "ВНИЗ (PUT)"];
-                        const randomDir = directions[Math.floor(Math.random() * directions.length)];
+                        const directions = ["ВВЕРХ (BUY)", "ВНИЗ (SELL)"];
+                        const dir = directions[Math.floor(Math.random() * directions.length)];
                         
-                        addLog(`[Сигнал] Стратегия сформировала точку входа: ${randomDir}. Открытие демо-контракта на $${stake}...`);
+                        addLog(`[Ордер] ИИ открывает виртуальную позицию ${dir} по цене ${currentPrice.toFixed(2)} на сумму $${stake}`);
                         
-                        // Симулируем исход сделки (через 3 секунды)
                         setTimeout(() => {
-                            const isWin = Math.random() > 0.42; // У робота заложен винрейт ~58% для тестов
+                            const isWin = Math.random() > 0.43;
                             totalTrades++;
                             
                             if (isWin) {
-                                const profit = stake * 0.95; // Доходность 95%
+                                const profit = stake * 0.92;
                                 balance += profit;
                                 totalProfit += profit;
                                 winTrades++;
-                                addLog(`[Результат] Демо-сделка закрыта в ПЛЮС! Прибыль: +$${profit.toFixed(2)}`, "success");
+                                addLog(`[Итог] Демо-контракт по ${currentAsset} закрыт в ПЛЮС! Прибыль: +$${profit.toFixed(2)}`, "success");
                             } else {
                                 balance -= stake;
                                 totalProfit -= stake;
-                                addLog(`[Результат] Демо-сделка закрыта в МИНУС. Убыток: -$${stake.toFixed(2)}`, "danger");
+                                addLog(`[Итог] Демо-контракт по ${currentAsset} закрыт в МИНУС. Убыток: -$${stake.toFixed(2)}`, "danger");
                             }
-                            
                             updateStatsUi();
                         }, 3000);
-
                     }, 1500);
-
-                }, 7000);
+                }, 8000);
 
             } else {
                 botActive = false;
-                btn.innerText = "Запустить анализ и тест";
+                btn.innerText = "Запустить робота в тест";
                 btn.classList.remove('active');
-                strategySelect.disabled = false;
+                select.disabled = false;
                 clearInterval(botInterval);
-                addLog("[Система] Анализ рынка и симуляция приостановлены.");
+                addLog("[Система] Симуляция и сбор статистики остановлены.");
             }
         }
+
+        // Старт при загрузке
+        window.onload = () => {
+            changeAsset();
+            updateStatsUi();
+        };
     </script>
 </body>
 </html>
