@@ -1,415 +1,253 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Darik TradeBot — Мультирыночный Симулятор</title>
-    <style>
-        :root {
-            --bg-color: #0b0d17;
-            --card-bg: #161925;
-            --accent-color: #6366f1;
-            --accent-hover: #4f46e5;
-            --text-main: #f3f4f6;
-            --text-muted: #9ca3af;
-            --success: #10b981;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI TRADER — анализ рынка Binance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B0F14; --bg-raised:#10161D; --bg-inset:#080B0F;
+    --line:#1D2630; --line-soft:#161D25;
+    --ink:#E8ECEF; --ink-dim:#8B96A3; --ink-faint:#5B6672;
+    --bull:#00D9A3; --bear:#FF5C5C; --amber:#FFB020;
+    --font-display:'Space Grotesk',sans-serif;
+    --font-body:'Inter',sans-serif;
+    --font-mono:'JetBrains Mono',monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--ink);font-family:var(--font-body);line-height:1.5;-webkit-font-smoothing:antialiased;}
+  a{color:inherit;text-decoration:none;}
+  button{font-family:inherit;cursor:pointer;}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 24px;}
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Roboto, sans-serif;
-        }
+  nav{display:flex;align-items:center;justify-content:space-between;padding:20px 0;border-bottom:1px solid var(--line);}
+  .logo{font-family:var(--font-display);font-weight:700;font-size:19px;display:flex;align-items:center;gap:9px;}
+  .env-badge{font-family:var(--font-mono);font-size:11px;padding:4px 10px;border-radius:5px;border:1px solid var(--line);color:var(--ink-dim);}
+  .env-badge.testnet{color:var(--bull);border-color:rgba(0,217,163,0.35);background:rgba(0,217,163,0.08);}
+  .env-badge.live{color:var(--bear);border-color:rgba(255,92,92,0.35);background:rgba(255,92,92,0.08);}
 
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            line-height: 1.6;
-            padding: 20px;
-        }
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:32px 0;}
+  @media(max-width:820px){.grid{grid-template-columns:1fr;}}
 
-        .container {
-            max-width: 1100px;
-            margin: 0 auto;
-        }
+  .card{background:var(--bg-raised);border:1px solid var(--line);border-radius:10px;padding:20px;}
+  .card h2{font-family:var(--font-display);font-size:16px;font-weight:600;margin-bottom:14px;}
 
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            margin-bottom: 30px;
-        }
+  label{display:block;font-size:12px;color:var(--ink-dim);margin-bottom:6px;margin-top:12px;}
+  label:first-of-type{margin-top:0;}
+  select,input{width:100%;background:var(--bg-inset);border:1px solid var(--line);padding:9px 12px;color:var(--ink);border-radius:6px;font-family:var(--font-mono);font-size:13px;}
+  .row{display:flex;gap:10px;}
+  .row>*{flex:1;}
 
-        .logo {
-            font-size: 24px;
-            font-weight: 700;
-            background: linear-gradient(45deg, #6366f1, #a855f7);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+  .btn{width:100%;margin-top:16px;background:var(--ink);color:var(--bg);padding:12px;border:none;border-radius:6px;font-weight:600;font-size:14px;transition:filter .15s;}
+  .btn:hover{filter:brightness(1.05);}
+  .btn:disabled{opacity:.5;cursor:not-allowed;}
+  .btn-bull{background:var(--bull);color:#06120E;}
+  .btn-bear{background:var(--bear);color:#2A0808;}
 
-        .demo-badge {
-            background-color: var(--warning);
-            color: #000;
-            padding: 4px 12px;
-            border-radius: 4px;
-            font-weight: 700;
-            font-size: 13px;
-        }
+  .result{margin-top:18px;display:none;}
+  .result.visible{display:block;}
+  .dir{font-family:var(--font-display);font-weight:700;font-size:26px;margin-bottom:12px;}
+  .dir.long{color:var(--bull);}
+  .dir.short{color:var(--bear);}
+  .dir.none{color:var(--ink-faint);}
 
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-            margin-bottom: 30px;
-        }
+  .levels{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:7px;overflow:hidden;}
+  .lvl{background:var(--bg-inset);padding:11px 13px;}
+  .lvl .l{font-family:var(--font-mono);font-size:10px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
+  .lvl .v{font-family:var(--font-mono);font-size:15px;font-weight:700;}
+  .reasoning{margin-top:14px;background:var(--bg-inset);border:1px solid var(--line);border-radius:6px;padding:12px;font-size:13px;color:var(--ink-dim);line-height:1.55;}
 
-        @media (max-width: 768px) {
-            .stats-grid { grid-template-columns: repeat(2, 1fr); }
-        }
+  .spinner{display:none;width:26px;height:26px;border:3px solid var(--line);border-top-color:var(--bull);border-radius:50%;animation:spin 1s linear infinite;margin:16px auto;}
+  .spinner.visible{display:block;}
+  @keyframes spin{to{transform:rotate(360deg);}}
 
-        .stat-card {
-            background-color: var(--card-bg);
-            padding: 15px 20px;
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
+  .msg{font-size:12.5px;padding:10px 12px;border-radius:6px;margin-top:12px;display:none;}
+  .msg.visible{display:block;}
+  .msg.err{background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);color:var(--bear);}
+  .msg.ok{background:rgba(0,217,163,0.1);border:1px solid rgba(0,217,163,0.3);color:var(--bull);}
 
-        .stat-label {
-            font-size: 13px;
-            color: var(--text-muted);
-            margin-bottom: 5px;
-        }
-
-        .stat-value {
-            font-size: 22px;
-            font-weight: 700;
-        }
-
-        .grid-main {
-            display: grid;
-            grid-template-columns: 1fr 1.2fr;
-            gap: 30px;
-        }
-
-        @media (max-width: 900px) {
-            .grid-main { grid-template-columns: 1fr; }
-        }
-
-        .panel {
-            background-color: var(--card-bg);
-            padding: 25px;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .ticker-box {
-            text-align: center;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.02);
-            border-radius: 8px;
-            margin-bottom: 25px;
-            border: 1px solid rgba(255, 255, 255, 0.03);
-        }
-
-        .price {
-            font-size: 38px;
-            font-weight: 800;
-            color: var(--success);
-            font-variant-numeric: tabular-nums;
-            margin-top: 5px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            font-size: 14px;
-            color: var(--text-muted);
-            margin-bottom: 8px;
-        }
-
-        input, select {
-            width: 100%;
-            padding: 12px;
-            background-color: var(--bg-color);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 6px;
-            color: #fff;
-            font-size: 16px;
-        }
-
-        .btn {
-            width: 100%;
-            background-color: var(--accent-color);
-            color: #fff;
-            padding: 14px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .btn:hover { background-color: var(--accent-hover); }
-        .btn.active { background-color: var(--danger); }
-
-        .log-panel {
-            background-color: #07080e;
-            border-radius: 8px;
-            padding: 15px;
-            height: 330px;
-            overflow-y: auto;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 13px;
-            color: #38bdf8;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .log-entry { margin-bottom: 6px; border-bottom: 1px solid rgba(255, 255, 255, 0.02); padding-bottom: 4px; }
-        .log-success { color: var(--success); font-weight: bold; }
-        .log-danger { color: var(--danger); font-weight: bold; }
-        .log-alert { color: var(--warning); }
-    </style>
+  .disclaimer{border-top:1px solid var(--line);padding:20px 0 40px;font-size:12px;color:var(--ink-faint);font-family:var(--font-mono);line-height:1.6;}
+  .balances{font-family:var(--font-mono);font-size:12.5px;line-height:1.7;color:var(--ink-dim);}
+</style>
 </head>
 <body>
+  <header class="wrap">
+    <nav>
+      <div class="logo">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="1" y="1" width="20" height="20" rx="4" stroke="#00D9A3" stroke-width="2"/><path d="M6 13l3-4 3 3 4-6" stroke="#E8ECEF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        AI TRADER
+      </div>
+      <span class="env-badge" id="envBadge">…</span>
+    </nav>
+  </header>
 
-    <div class="container">
-        <header>
-            <div class="logo">Darik TradeBot</div>
-            <div class="demo-badge">ДЕМО АНАЛИЗ РЫНКОВ</div>
-        </header>
-
-        <!-- Блок статистики Демо-счета -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-label">Виртуальный баланс</div>
-                <div class="stat-value" id="stat-balance">$10,000.00</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Сделок совершено</div>
-                <div class="stat-value" id="stat-total">0</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Доля побед (Winrate)</div>
-                <div class="stat-value" id="stat-winrate" style="color: var(--success);">0%</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Текущий профит</div>
-                <div class="stat-value" id="stat-profit" style="color: var(--success);">$0.00</div>
-            </div>
+  <main class="wrap">
+    <div class="grid">
+      <!-- Analysis -->
+      <div class="card">
+        <h2>Анализ рынка</h2>
+        <label for="symbol">Пара</label>
+        <div class="row">
+          <select id="symbol">
+            <option>BTCUSDT</option><option>ETHUSDT</option><option>SOLUSDT</option>
+            <option>BNBUSDT</option><option>XRPUSDT</option>
+          </select>
+          <select id="interval">
+            <option value="5m">5m</option>
+            <option value="15m" selected>15m</option>
+            <option value="1h">1h</option>
+            <option value="4h">4h</option>
+          </select>
         </div>
+        <button class="btn" id="analyzeBtn">Проанализировать по стратегии</button>
+        <div class="spinner" id="spinner"></div>
+        <div class="msg err" id="analyzeErr"></div>
 
-        <div class="grid-main">
-            <!-- Левая часть: Выбор актива и Настройки -->
-            <div class="panel">
-                <div class="ticker-box">
-                    <label id="asset-label">Поток котировок</label>
-                    <div class="price" id="live-price">Подключение...</div>
-                </div>
-
-                <div class="form-group">
-                    <label>Торговый актив (Рынок)</label>
-                    <select id="asset-select" onchange="changeAsset()">
-                        <option value="XAUUSD">Золото (XAU/USD)</option>
-                        <option value="BTCUSD">Криптовалюта: Bitcoin (BTC)</option>
-                        <option value="TSLA">Акции: Tesla Motors (TSLA)</option>
-                        <option value="VOL100">Индекс волатильности Deriv (1HZ100V)</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Сумма демо-сделки ($)</label>
-                    <input type="number" id="stake" value="100" min="1">
-                </div>
-
-                <div class="form-group">
-                    <label>Модель ИИ-анализа</label>
-                    <select id="strategy">
-                        <option value="adaptive">Адаптивный Нейро-Скальпинг</option>
-                        <option value="trend">Поиск зон ликвидности (Smart Money)</option>
-                    </select>
-                </div>
-
-                <button class="btn" id="start-btn" onclick="toggleBot()">Запустить робота в тест</button>
-            </div>
-
-            <!-- Правая часть: Логирование -->
-            <div class="panel">
-                <h3 style="margin-bottom: 15px;">Анализ рынка в реальном времени</h3>
-                <div class="log-panel" id="log-container">
-                    <div class="log-entry">[Инфо] Выберите желаемый актив и запустите тест.</div>
-                </div>
-            </div>
+        <div class="result" id="result">
+          <div class="dir" id="dir">—</div>
+          <div class="levels">
+            <div class="lvl"><div class="l">Вход</div><div class="v" id="lvEntry">—</div></div>
+            <div class="lvl"><div class="l">Стоп</div><div class="v" id="lvStop">—</div></div>
+            <div class="lvl"><div class="l">Тейк 1</div><div class="v" id="lvTake1">—</div></div>
+            <div class="lvl"><div class="l">Тейк 2</div><div class="v" id="lvTake2">—</div></div>
+            <div class="lvl"><div class="l">R : R</div><div class="v" id="lvRR">—</div></div>
+            <div class="lvl"><div class="l">Уверенность</div><div class="v" id="lvConf">—</div></div>
+          </div>
+          <div class="reasoning" id="reasoning"></div>
         </div>
+      </div>
+
+      <!-- Trade -->
+      <div class="card">
+        <h2>Сделка (demo · Testnet)</h2>
+        <div class="balances" id="balances">Баланс не загружен.</div>
+        <button class="btn" id="balanceBtn" style="margin-top:12px;background:var(--bg-inset);color:var(--ink);border:1px solid var(--line);">Обновить баланс</button>
+
+        <label for="qty">Количество (базовый актив)</label>
+        <input id="qty" type="number" step="0.0001" placeholder="0.001">
+        <div class="row" style="margin-top:16px;">
+          <button class="btn btn-bull" id="buyBtn" style="margin-top:0;">Купить (BUY)</button>
+          <button class="btn btn-bear" id="sellBtn" style="margin-top:0;">Продать (SELL)</button>
+        </div>
+        <div class="msg" id="tradeMsg"></div>
+      </div>
     </div>
 
-    <script>
-        // Имитация базовых цен для разных активов, чтобы при переключении цифры соответствовали реальности
-        const basePrices = {
-            XAUUSD: 2350.40,
-            BTCUSD: 67200.15,
-            TSLA: 178.50,
-            VOL100: 8450.00
-        };
+    <div class="disclaimer">
+      Не является финансовой рекомендацией. Уровни — это учебный анализ по вашей
+      стратегии, а не гарантированный сигнал. Торговый ключ хранится только на
+      сервере. Начинайте на Testnet; переход на реальный счёт — на ваш риск.
+    </div>
+  </main>
 
-        let currentAsset = 'XAUUSD';
-        let currentPrice = basePrices[currentAsset];
-        let ws;
+<script>
+const $ = (id) => document.getElementById(id);
+let lastClose = null;
 
-        // Переменные Демо-счета
-        let balance = 10000.00;
-        let totalTrades = 0;
-        let winTrades = 0;
-        let totalProfit = 0.00;
+// Load environment badge (testnet / live).
+fetch('/api/config').then(r => r.json()).then(cfg => {
+  const b = $('envBadge');
+  b.textContent = cfg.env === 'live' ? 'LIVE · реальные деньги' : 'TESTNET · demo';
+  b.className = 'env-badge ' + (cfg.env === 'live' ? 'live' : 'testnet');
+}).catch(() => {});
 
-        let botActive = false;
-        let botInterval;
-        const priceEl = document.getElementById('live-price');
-        const logContainer = document.getElementById('log-container');
+// --- Analyze ---
+$('analyzeBtn').addEventListener('click', async () => {
+  const symbol = $('symbol').value;
+  const interval = $('interval').value;
+  $('analyzeErr').classList.remove('visible');
+  $('result').classList.remove('visible');
+  $('spinner').classList.add('visible');
+  $('analyzeBtn').disabled = true;
 
-        // Живая генерация/обновление цен для активов
-        function startPriceStream() {
-            // Для Индекса Deriv мы используем их реальный WebSocket
-            if (currentAsset === 'VOL100') {
-                if (ws) ws.close();
-                ws = new WebSocket('wss://ws.derivws.com/websockets/v3?app_id=1089');
-                ws.onopen = () => ws.send(JSON.stringify({ ticks: '1HZ100V' }));
-                ws.onmessage = (msg) => {
-                    const data = JSON.parse(msg.data);
-                    if (data.tick && currentAsset === 'VOL100') {
-                        updatePriceDisplay(data.tick.quote);
-                    }
-                };
-            } else {
-                // Для Золота, Биткоина и Теслы делаем плавную математическую симуляцию тиков
-                if (ws) { ws.close(); ws = null; }
-                if (window.tickerInterval) clearInterval(window.tickerInterval);
-                
-                window.tickerInterval = setInterval(() => {
-                    const change = (Math.random() - 0.5) * (currentPrice * 0.0005);
-                    updatePriceDisplay(currentPrice + change);
-                }, 1000);
-            }
-        }
+  try {
+    const res = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ symbol, interval, limit: 150 }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Ошибка анализа');
 
-        function updatePriceDisplay(newPrice) {
-            if (newPrice > currentPrice) {
-                priceEl.style.color = "#10b981";
-            } else {
-                priceEl.style.color = "#ef4444";
-            }
-            currentPrice = newPrice;
-            priceEl.innerText = currentPrice.toFixed(currentAsset === 'TSLA' || currentAsset === 'XAUUSD' ? 2 : 2);
-        }
+    lastClose = data.lastClose;
+    const a = data.analysis;
+    const dir = (a.direction || 'none').toLowerCase();
+    const dirText = { long: 'LONG · покупка', short: 'SHORT · продажа', none: 'НЕТ ВХОДА' };
+    $('dir').textContent = dirText[dir] || 'НЕТ ВХОДА';
+    $('dir').className = 'dir ' + dir;
 
-        function changeAsset() {
-            const select = document.getElementById('asset-select');
-            currentAsset = select.value;
-            currentPrice = basePrices[currentAsset];
-            
-            document.getElementById('asset-label').innerText = `Живой график: ${select.options[select.selectedIndex].text}`;
-            priceEl.innerText = "Загрузка...";
-            
-            if(botActive) {
-                toggleBot(); // стопаем робота при смене актива
-            }
-            
-            startPriceStream();
-            addLog(`Актив переключен на: ${select.options[select.selectedIndex].text}`);
-        }
+    const fmt = (v) => (v === null || v === undefined) ? '—' : v;
+    $('lvEntry').textContent = fmt(a.entry);
+    $('lvStop').textContent = fmt(a.stop);
+    $('lvTake1').textContent = fmt(a.take1);
+    $('lvTake2').textContent = fmt(a.take2);
+    $('lvRR').textContent = a.risk_reward ? ('1 : ' + a.risk_reward) : '—';
+    $('lvConf').textContent = fmt(a.confidence);
+    $('reasoning').textContent = a.reasoning || '';
+    $('result').classList.add('visible');
+  } catch (err) {
+    $('analyzeErr').textContent = err.message;
+    $('analyzeErr').classList.add('visible');
+  } finally {
+    $('spinner').classList.remove('visible');
+    $('analyzeBtn').disabled = false;
+  }
+});
 
-        function addLog(text, type = "") {
-            const entry = document.createElement('div');
-            entry.className = `log-entry ${type ? 'log-' + type : ''}`;
-            const time = new Date().toLocaleTimeString();
-            entry.innerText = `[${time}] ${text}`;
-            logContainer.appendChild(entry);
-            logContainer.scrollTop = logContainer.scrollHeight;
-        }
+// --- Balance ---
+$('balanceBtn').addEventListener('click', async () => {
+  $('balances').textContent = 'Загрузка…';
+  try {
+    const res = await fetch('/api/balance');
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Ошибка');
+    const rows = (data.balances || [])
+      .map(b => `${b.asset}: ${Number(b.free).toFixed(6)}`)
+      .join('  ·  ');
+    $('balances').textContent = rows || 'Пустой баланс.';
+  } catch (err) {
+    $('balances').textContent = 'Ошибка: ' + err.message;
+  }
+});
 
-        function updateStatsUi() {
-            document.getElementById('stat-balance').innerText = `$${balance.toFixed(2)}`;
-            document.getElementById('stat-total').innerText = totalTrades;
-            const winrate = totalTrades > 0 ? ((winTrades / totalTrades) * 100).toFixed(1) : 0;
-            document.getElementById('stat-winrate').innerText = `${winrate}%`;
-            
-            const profitEl = document.getElementById('stat-profit');
-            profitEl.innerText = `${totalProfit >= 0 ? '+' : ''}$${totalProfit.toFixed(2)}`;
-            profitEl.style.color = totalProfit >= 0 ? "var(--success)" : "var(--danger)";
-        }
+// --- Trade ---
+async function placeOrder(side) {
+  const symbol = $('symbol').value;
+  const quantity = Number($('qty').value);
+  const msg = $('tradeMsg');
+  msg.className = 'msg';
 
-        function toggleBot() {
-            const btn = document.getElementById('start-btn');
-            const stake = parseFloat(document.getElementById('stake').value);
-            const select = document.getElementById('asset-select');
-            const assetName = select.options[select.selectedIndex].text;
+  if (!(quantity > 0)) {
+    msg.textContent = 'Укажите количество больше 0.';
+    msg.className = 'msg err visible';
+    return;
+  }
+  const sideText = side === 'BUY' ? 'КУПИТЬ' : 'ПРОДАТЬ';
+  if (!confirm(`Подтвердите: ${sideText} ${quantity} ${symbol} по рынку?`)) return;
 
-            if (isNaN(stake) || stake <= 0 || stake > balance) {
-                alert("Укажите корректную сумму для демо-ордера.");
-                return;
-            }
-
-            if (!botActive) {
-                botActive = true;
-                btn.innerText = "Остановить анализ";
-                btn.classList.add('active');
-                select.disabled = true;
-
-                addLog(`[Робот] Запущен глубокий анализ рынка по инструменту ${assetName}...`, "alert");
-
-                botInterval = setInterval(() => {
-                    addLog(`[ИИ] Сканирование стакана и объемов по ${currentAsset}... Сигналы стабильны.`);
-                    
-                    setTimeout(() => {
-                        const directions = ["ВВЕРХ (BUY)", "ВНИЗ (SELL)"];
-                        const dir = directions[Math.floor(Math.random() * directions.length)];
-                        
-                        addLog(`[Ордер] ИИ открывает виртуальную позицию ${dir} по цене ${currentPrice.toFixed(2)} на сумму $${stake}`);
-                        
-                        setTimeout(() => {
-                            const isWin = Math.random() > 0.43;
-                            totalTrades++;
-                            
-                            if (isWin) {
-                                const profit = stake * 0.92;
-                                balance += profit;
-                                totalProfit += profit;
-                                winTrades++;
-                                addLog(`[Итог] Демо-контракт по ${currentAsset} закрыт в ПЛЮС! Прибыль: +$${profit.toFixed(2)}`, "success");
-                            } else {
-                                balance -= stake;
-                                totalProfit -= stake;
-                                addLog(`[Итог] Демо-контракт по ${currentAsset} закрыт в МИНУС. Убыток: -$${stake.toFixed(2)}`, "danger");
-                            }
-                            updateStatsUi();
-                        }, 3000);
-                    }, 1500);
-                }, 8000);
-
-            } else {
-                botActive = false;
-                btn.innerText = "Запустить робота в тест";
-                btn.classList.remove('active');
-                select.disabled = false;
-                clearInterval(botInterval);
-                addLog("[Система] Симуляция и сбор статистики остановлены.");
-            }
-        }
-
-        // Старт при загрузке
-        window.onload = () => {
-            changeAsset();
-            updateStatsUi();
-        };
-    </script>
+  msg.textContent = 'Отправка ордера…';
+  msg.className = 'msg visible';
+  try {
+    const res = await fetch('/api/order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ symbol, side, quantity, refPrice: lastClose, confirm: true }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Ошибка ордера');
+    msg.textContent = `Ордер принят: ${data.order.side} ${data.order.executedQty || quantity} ${symbol} (статус ${data.order.status || 'ok'}).`;
+    msg.className = 'msg ok visible';
+  } catch (err) {
+    msg.textContent = err.message;
+    msg.className = 'msg err visible';
+  }
+}
+$('buyBtn').addEventListener('click', () => placeOrder('BUY'));
+$('sellBtn').addEventListener('click', () => placeOrder('SELL'));
+</script>
 </body>
 </html>
